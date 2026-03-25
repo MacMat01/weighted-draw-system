@@ -1,0 +1,17 @@
+{
+  "name": "com.macmat01.choice-driven-system",
+  "version": "1.0.0",
+  "displayName": "CDS - Choise Driven System",
+  "description": "Reusable Unity plugin for event management",
+  "unity": "6000.4",
+  "author": {
+    "name": "I tre Moschettieri"
+  },
+  "samples": [
+    {
+      "displayName": "Basic CDS Example",
+      "description": "Simple usage example",
+      "path": "Samples~/BasicExample"
+    }
+  ]
+}
