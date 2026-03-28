@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using ProbabilisticEngine.Runtime;
+using ProbabilisticEngine.Utils;
 
 namespace ProbabilisticEngine.Core
 {

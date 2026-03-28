@@ -1,4 +1,5 @@
 ﻿using ProbabilisticEngine.Core;
+using ProbabilisticEngine.Runtime;
 
 namespace ProbabilisticEngine.Conditions
 {

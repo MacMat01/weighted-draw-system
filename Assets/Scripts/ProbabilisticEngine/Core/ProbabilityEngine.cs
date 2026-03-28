@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using ProbabilisticEngine.Data;
+using ProbabilisticEngine.Runtime;
 
 namespace ProbabilisticEngine.Core
 {
@@ -13,8 +15,12 @@ namespace ProbabilisticEngine.Core
 
         public ProbabilityResult Evaluate(string choiceId, GameState state)
         {
-            var choice = _database.GetChoice(choiceId);
-            return choice?.Evaluate(state);
+            var def = _database.GetChoice(choiceId);
+            if (def == null)
+                return null;
+
+            var choice = ChoiceBuilder.Build(def);
+            return choice.Evaluate(state);
         }
     }
 }
