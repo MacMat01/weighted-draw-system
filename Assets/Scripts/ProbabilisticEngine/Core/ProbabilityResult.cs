@@ -1,13 +1,13 @@
-﻿namespace ProbabilisticEngine.Core
+﻿    namespace ProbabilisticEngine.Core
 {
     public class ProbabilityResult
     {
-        public string OptionId { get; }
+        public ProbabilityOption Option { get; }
         public float FinalWeight { get; }
 
-        public ProbabilityResult(string optionId, float finalWeight)
+        public ProbabilityResult(ProbabilityOption option, float finalWeight)
         {
-            OptionId = optionId;
+            Option = option;
             FinalWeight = finalWeight;
         }
     }

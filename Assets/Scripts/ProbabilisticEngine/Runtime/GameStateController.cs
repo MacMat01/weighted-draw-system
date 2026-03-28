@@ -8,7 +8,12 @@ namespace ProbabilisticEngine.Runtime
 
         public void ApplyResult(ProbabilityResult result)
         {
-            // Qui applichi effetti, flag, risorse, ecc.
+            if (result == null)
+                return;
+
+            foreach (var effect in result.Option.Effects)
+                effect.Apply(State);
+
         }
     }
 }

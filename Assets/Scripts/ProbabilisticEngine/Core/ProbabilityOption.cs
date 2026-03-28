@@ -7,6 +7,7 @@ namespace ProbabilisticEngine.Core
     {
         public string Id;
         public float BaseWeight;
+        public List<IEffect> Effects = new();
 
         public List<ICondition> Conditions = new();
         public List<IModifier> Modifiers = new();

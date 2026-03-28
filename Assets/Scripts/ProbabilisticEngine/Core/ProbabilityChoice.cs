@@ -22,7 +22,7 @@ namespace ProbabilisticEngine.Core
             var weights = valid.Select(o => o.ComputeWeight(state)).ToList();
             int index = WeightedRandom.PickIndex(weights);
 
-            return new ProbabilityResult(valid[index].Id, weights[index]);
+            return new ProbabilityResult(valid[index], weights[index]);
         }
     }
 }

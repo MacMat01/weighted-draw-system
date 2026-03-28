@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using ProbabilisticEngine.Data;
 using ProbabilisticEngine.Runtime;
 
@@ -6,20 +7,18 @@ namespace ProbabilisticEngine.Core
 {
     public class ProbabilityEngine
     {
-        private readonly ChoiceDatabase _database;
+        private readonly Dictionary<string, ProbabilityChoice> _choices;
 
-        public ProbabilityEngine(ChoiceDatabase database)
+        public ProbabilityEngine(IEnumerable<ProbabilityChoice> choices)
         {
-            _database = database;
+            _choices = choices.ToDictionary(c => c.Id);
         }
 
         public ProbabilityResult Evaluate(string choiceId, GameState state)
         {
-            var def = _database.GetChoice(choiceId);
-            if (def == null)
+            if (!_choices.TryGetValue(choiceId, out var choice))
                 return null;
 
-            var choice = ChoiceBuilder.Build(def);
             return choice.Evaluate(state);
         }
     }
