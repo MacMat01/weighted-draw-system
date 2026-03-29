@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using UnityEngine;
-namespace Core.DynamicData
+namespace Importer.Core.DynamicData
 {
     /// <summary>
     ///     Schema-driven JSON parser that reads flat JSON objects according to a DataSchemaSO definition.

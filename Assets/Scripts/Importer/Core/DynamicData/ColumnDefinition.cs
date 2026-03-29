@@ -1,5 +1,5 @@
 ﻿using System;
-namespace Core.DynamicData
+namespace Importer.Core.DynamicData
 {
     /// <summary>
     ///     Defines a single column in a CSV schema.

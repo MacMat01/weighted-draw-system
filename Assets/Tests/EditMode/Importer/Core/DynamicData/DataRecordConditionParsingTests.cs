@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
-using Core.DynamicData;
+using Importer.Core.DynamicData;
 using NUnit.Framework;
 using UnityEngine;
-namespace Tests.EditMode.Core.DynamicData
+namespace Tests.EditMode.Importer.Core.DynamicData
 {
     public class DataRecordConditionParsingTests
     {
@@ -39,7 +39,7 @@ namespace Tests.EditMode.Core.DynamicData
             Assert.AreEqual(1, conditions.Count);
             Assert.AreEqual("power", conditions[0].VariableName);
             Assert.AreEqual(">", conditions[0].Operator);
-            Assert.AreEqual(40f, conditions[0].Value, 0.001f);
+            Assert.That(conditions[0].Value, Is.EqualTo(40f).Within(0.001f));
         }
 
         [Test]
@@ -53,11 +53,11 @@ namespace Tests.EditMode.Core.DynamicData
 
             Assert.AreEqual("power", conditions[0].VariableName);
             Assert.AreEqual(">", conditions[0].Operator);
-            Assert.AreEqual(40f, conditions[0].Value, 0.001f);
+            Assert.That(conditions[0].Value, Is.EqualTo(40f).Within(0.001f));
 
             Assert.AreEqual("speed", conditions[1].VariableName);
             Assert.AreEqual("<", conditions[1].Operator);
-            Assert.AreEqual(5f, conditions[1].Value, 0.001f);
+            Assert.That(conditions[1].Value, Is.EqualTo(5f).Within(0.001f));
         }
 
         [Test]
@@ -70,19 +70,19 @@ namespace Tests.EditMode.Core.DynamicData
             Assert.AreEqual(4, conditions.Count);
             Assert.AreEqual("power", conditions[0].VariableName);
             Assert.AreEqual(">", conditions[0].Operator);
-            Assert.AreEqual(40f, conditions[0].Value, 0.001f);
+            Assert.That(conditions[0].Value, Is.EqualTo(40f).Within(0.001f));
 
             Assert.AreEqual("speed", conditions[1].VariableName);
             Assert.AreEqual("<", conditions[1].Operator);
-            Assert.AreEqual(5f, conditions[1].Value, 0.001f);
+            Assert.That(conditions[1].Value, Is.EqualTo(5f).Within(0.001f));
 
             Assert.AreEqual("alchemy", conditions[2].VariableName);
             Assert.AreEqual("!=", conditions[2].Operator);
-            Assert.AreEqual(1f, conditions[2].Value, 0.001f);
+            Assert.That(conditions[2].Value, Is.EqualTo(1f).Within(0.001f));
 
             Assert.AreEqual("level", conditions[3].VariableName);
             Assert.AreEqual(">=", conditions[3].Operator);
-            Assert.AreEqual(2f, conditions[3].Value, 0.001f);
+            Assert.That(conditions[3].Value, Is.EqualTo(2f).Within(0.001f));
         }
 
         [Test]
@@ -97,12 +97,12 @@ namespace Tests.EditMode.Core.DynamicData
             // "alchemy" should be alchemy == 1
             Assert.AreEqual("alchemy", conditions[0].VariableName);
             Assert.AreEqual("==", conditions[0].Operator);
-            Assert.AreEqual(1f, conditions[0].Value, 0.001f);
+            Assert.That(conditions[0].Value, Is.EqualTo(1f).Within(0.001f));
 
             // "!cursed" should be cursed != 1
             Assert.AreEqual("cursed", conditions[1].VariableName);
             Assert.AreEqual("!=", conditions[1].Operator);
-            Assert.AreEqual(1f, conditions[1].Value, 0.001f);
+            Assert.That(conditions[1].Value, Is.EqualTo(1f).Within(0.001f));
         }
 
         [Test]
@@ -124,7 +124,7 @@ namespace Tests.EditMode.Core.DynamicData
                 Assert.AreEqual(1, conditions.Count, $"Failed parsing: {input}");
                 Assert.AreEqual(expectedVar, conditions[0].VariableName, $"Variable mismatch for: {input}");
                 Assert.AreEqual(expectedOp, conditions[0].Operator, $"Operator mismatch for: {input}");
-                Assert.AreEqual(expectedVal, conditions[0].Value, 0.001f, $"Value mismatch for: {input}");
+                Assert.That(conditions[0].Value, Is.EqualTo(expectedVal).Within(0.001f), $"Value mismatch for: {input}");
             }
         }
 
@@ -222,10 +222,10 @@ namespace Tests.EditMode.Core.DynamicData
             Assert.AreEqual(2, conditions.Count);
             Assert.AreEqual("power", conditions[0].VariableName);
             Assert.AreEqual(">", conditions[0].Operator);
-            Assert.AreEqual(10f, conditions[0].Value, 0.001f);
+            Assert.That(conditions[0].Value, Is.EqualTo(10f).Within(0.001f));
             Assert.AreEqual("speed", conditions[1].VariableName);
             Assert.AreEqual("<", conditions[1].Operator);
-            Assert.AreEqual(5f, conditions[1].Value, 0.001f);
+            Assert.That(conditions[1].Value, Is.EqualTo(5f).Within(0.001f));
         }
 
         [Test]

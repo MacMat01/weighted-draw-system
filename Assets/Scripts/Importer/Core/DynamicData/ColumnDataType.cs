@@ -1,4 +1,4 @@
-﻿namespace Core.DynamicData
+﻿namespace Importer.Core.DynamicData
 {
     /// <summary>
     ///     Defines the type of data expected in a CSV column.

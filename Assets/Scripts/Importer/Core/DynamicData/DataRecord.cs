@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-namespace Core.DynamicData
+namespace Importer.Core.DynamicData
 {
     /// <summary>
     ///     Represents a single parsed row from a CSV file.
