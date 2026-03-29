@@ -12,7 +12,7 @@ namespace Importer.Core.DynamicData
     /// </summary>
     public static class ConditionParserUtility
     {
-        private static readonly Regex ConnectorSplitRegex = new Regex(@"\s*(?:&&|\|\||\band\b|\bor\b|&|\||;)\s*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex ConnectorRegex = new Regex(@"&&|\|\||\band\b|\bor\b|&|\||;", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         private static readonly string[] SupportedOperators =
         {
@@ -38,22 +38,24 @@ namespace Importer.Core.DynamicData
             }
 
             string trimmed = rawConditionString.Trim();
-            string[] parts = ConnectorSplitRegex.Split(trimmed);
+            MatchCollection connectorMatches = ConnectorRegex.Matches(trimmed);
 
-            foreach (string part in parts)
+            int segmentStart = 0;
+            string pendingConnector = null;
+            string pendingRawConnector = null;
+
+            foreach (Match connectorMatch in connectorMatches)
             {
-                string cleanPart = part.Trim();
-                if (string.IsNullOrEmpty(cleanPart))
-                {
-                    continue;
-                }
+                string segment = trimmed.Substring(segmentStart, connectorMatch.Index - segmentStart).Trim();
+                TryParseAndAdd(conditions, segment, pendingConnector, pendingRawConnector);
 
-                ParsedCondition condition = ParseSingleCondition(cleanPart);
-                if (condition != null)
-                {
-                    conditions.Add(condition);
-                }
+                pendingRawConnector = connectorMatch.Value.Trim();
+                pendingConnector = NormalizeConnector(pendingRawConnector);
+                segmentStart = connectorMatch.Index + connectorMatch.Length;
             }
+
+            string finalSegment = trimmed.Substring(segmentStart).Trim();
+            TryParseAndAdd(conditions, finalSegment, pendingConnector, pendingRawConnector);
 
             return conditions;
         }
@@ -85,6 +87,44 @@ namespace Importer.Core.DynamicData
             }
 
             return null;
+        }
+
+        private static void TryParseAndAdd(
+            List<ParsedCondition> conditions,
+            string segment,
+            string connectorFromPrevious,
+            string rawConnectorFromPrevious)
+        {
+            if (string.IsNullOrEmpty(segment))
+            {
+                return;
+            }
+
+            ParsedCondition condition = ParseSingleCondition(segment);
+            if (condition == null)
+            {
+                return;
+            }
+
+            condition.ConnectorFromPrevious = conditions.Count == 0 ? null : connectorFromPrevious;
+            condition.RawConnectorFromPrevious = conditions.Count == 0 ? null : rawConnectorFromPrevious;
+            conditions.Add(condition);
+        }
+
+        private static string NormalizeConnector(string rawConnector)
+        {
+            if (string.IsNullOrWhiteSpace(rawConnector))
+            {
+                return null;
+            }
+
+            string token = rawConnector.Trim().ToLowerInvariant();
+            return token switch
+            {
+                "&&" or "&" or "and" or ";" => "AND",
+                "||" or "|" or "or" => "OR",
+                _ => null
+            };
         }
 
         private static bool TryParseAsFlag(string conditionPart, out ParsedCondition flagCondition)

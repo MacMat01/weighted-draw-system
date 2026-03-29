@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Importer.Core.DynamicData;
 using NUnit.Framework;
 using UnityEngine;
@@ -54,10 +55,13 @@ namespace Tests.EditMode.Importer.Core.DynamicData
             Assert.AreEqual("power", conditions[0].VariableName);
             Assert.AreEqual(">", conditions[0].Operator);
             Assert.That(conditions[0].Value, Is.EqualTo(40f).Within(0.001f));
+            Assert.IsNull(conditions[0].ConnectorFromPrevious);
 
             Assert.AreEqual("speed", conditions[1].VariableName);
             Assert.AreEqual("<", conditions[1].Operator);
             Assert.That(conditions[1].Value, Is.EqualTo(5f).Within(0.001f));
+            Assert.AreEqual("AND", conditions[1].ConnectorFromPrevious);
+            Assert.AreEqual("&&", conditions[1].RawConnectorFromPrevious);
         }
 
         [Test]
@@ -71,18 +75,25 @@ namespace Tests.EditMode.Importer.Core.DynamicData
             Assert.AreEqual("power", conditions[0].VariableName);
             Assert.AreEqual(">", conditions[0].Operator);
             Assert.That(conditions[0].Value, Is.EqualTo(40f).Within(0.001f));
+            Assert.IsNull(conditions[0].ConnectorFromPrevious);
 
             Assert.AreEqual("speed", conditions[1].VariableName);
             Assert.AreEqual("<", conditions[1].Operator);
             Assert.That(conditions[1].Value, Is.EqualTo(5f).Within(0.001f));
+            Assert.AreEqual("OR", conditions[1].ConnectorFromPrevious);
+            Assert.AreEqual("||", conditions[1].RawConnectorFromPrevious);
 
             Assert.AreEqual("alchemy", conditions[2].VariableName);
             Assert.AreEqual("!=", conditions[2].Operator);
             Assert.That(conditions[2].Value, Is.EqualTo(1f).Within(0.001f));
+            Assert.AreEqual("AND", conditions[2].ConnectorFromPrevious);
+            Assert.AreEqual("and", conditions[2].RawConnectorFromPrevious);
 
             Assert.AreEqual("level", conditions[3].VariableName);
             Assert.AreEqual(">=", conditions[3].Operator);
             Assert.That(conditions[3].Value, Is.EqualTo(2f).Within(0.001f));
+            Assert.AreEqual("AND", conditions[3].ConnectorFromPrevious);
+            Assert.AreEqual(";", conditions[3].RawConnectorFromPrevious);
         }
 
         [Test]
@@ -103,6 +114,8 @@ namespace Tests.EditMode.Importer.Core.DynamicData
             Assert.AreEqual("cursed", conditions[1].VariableName);
             Assert.AreEqual("!=", conditions[1].Operator);
             Assert.That(conditions[1].Value, Is.EqualTo(1f).Within(0.001f));
+            Assert.AreEqual("AND", conditions[1].ConnectorFromPrevious);
+            Assert.AreEqual("&&", conditions[1].RawConnectorFromPrevious);
         }
 
         [Test]
@@ -141,6 +154,44 @@ namespace Tests.EditMode.Importer.Core.DynamicData
         }
 
         [Test]
+        public void ConditionParserUtility_SkipsMalformedSegments_AndKeepsValidOnes()
+        {
+            const string input = "power>10&&invalid$$$||speed<5";
+
+            List<ParsedCondition> conditions = ConditionParserUtility.Parse(input);
+
+            Assert.AreEqual(2, conditions.Count);
+            Assert.AreEqual("power", conditions[0].VariableName);
+            Assert.AreEqual("speed", conditions[1].VariableName);
+            // The invalid middle segment is skipped, then the next valid segment uses the latest connector encountered.
+            Assert.AreEqual("OR", conditions[1].ConnectorFromPrevious);
+            Assert.AreEqual("||", conditions[1].RawConnectorFromPrevious);
+        }
+
+        [Test]
+        public void ConditionParserUtility_HandlesLeadingAndTrailingConnectors()
+        {
+            List<ParsedCondition> leading = ConditionParserUtility.Parse("&&power>10");
+            List<ParsedCondition> trailing = ConditionParserUtility.Parse("power>10||");
+
+            Assert.AreEqual(1, leading.Count);
+            Assert.AreEqual("power", leading[0].VariableName);
+            Assert.IsNull(leading[0].ConnectorFromPrevious);
+
+            Assert.AreEqual(1, trailing.Count);
+            Assert.AreEqual("power", trailing[0].VariableName);
+            Assert.IsNull(trailing[0].ConnectorFromPrevious);
+        }
+
+        [Test]
+        public void ConditionParserUtility_ReturnsEmptyForUnsupportedOrNonNumericExpressions()
+        {
+            Assert.AreEqual(0, ConditionParserUtility.Parse("power~=10").Count);
+            Assert.AreEqual(0, ConditionParserUtility.Parse("power>abc").Count);
+            Assert.AreEqual(0, ConditionParserUtility.Parse(">10").Count);
+        }
+
+        [Test]
         public void SchemaDrivenCsvParser_ParsesMultipleRows()
         {
             const string csv = "Id,Name,Power,Speed,IsActive,Requirements\n" +
@@ -164,6 +215,52 @@ namespace Tests.EditMode.Importer.Core.DynamicData
             {
                 Assert.AreEqual(2, conditions2.Count);
             }
+        }
+
+        [Test]
+        public void SchemaDrivenCsvParser_HandlesQuotedCommasAndEscapedQuotes()
+        {
+            const string csv = "Id,Name,Power,Speed,IsActive,Requirements\n" +
+                "c1,\"Warrior, Elite \"\"Mk2\"\"\",50,3.5,true,\"power>40\"";
+
+            DataSchemaSO schema = CreateTestSchema();
+            SchemaDrivenCsvParser parser = new SchemaDrivenCsvParser();
+            List<DataRecord> records = parser.Parse(csv, schema);
+
+            Assert.AreEqual(1, records.Count);
+            Assert.AreEqual("Warrior, Elite \"Mk2\"", records[0].GetField("Name"));
+        }
+
+        [Test]
+        public void SchemaDrivenCsvParser_HandlesBlankLinesAndCrLf()
+        {
+            const string csv = "Id,Name,Power,Speed,IsActive,Requirements\r\n" +
+                "\r\n" +
+                "c1,Warrior,50,3.5,true,\"power>40\"\r\n" +
+                "\r\n" +
+                "c2,Mage,30,5.2,false,\"mana>10\"\r\n";
+
+            DataSchemaSO schema = CreateTestSchema();
+            SchemaDrivenCsvParser parser = new SchemaDrivenCsvParser();
+            List<DataRecord> records = parser.Parse(csv, schema);
+
+            Assert.AreEqual(2, records.Count);
+            Assert.AreEqual("Warrior", records[0].GetField("Name"));
+            Assert.AreEqual("Mage", records[1].GetField("Name"));
+        }
+
+        [Test]
+        public void SchemaDrivenCsvParser_HandlesQuotedMultilineFields()
+        {
+            const string csv = "Id,Name,Power,Speed,IsActive,Requirements\n" +
+                "c1,\"Line1\nLine2\",50,3.5,true,\"power>40\"";
+
+            DataSchemaSO schema = CreateTestSchema();
+            SchemaDrivenCsvParser parser = new SchemaDrivenCsvParser();
+            List<DataRecord> records = parser.Parse(csv, schema);
+
+            Assert.AreEqual(1, records.Count);
+            Assert.AreEqual("Line1\nLine2", records[0].GetField("Name"));
         }
 
         [Test]
@@ -205,6 +302,24 @@ namespace Tests.EditMode.Importer.Core.DynamicData
         }
 
         [Test]
+        public void SchemaDrivenCsvParser_DefaultsInvalidTypedValues()
+        {
+            const string csv = "Id,Name,Power,Speed,IsActive,Requirements\n" +
+                "c1,Broken,notInt,notFloat,notBool,\"\"";
+
+            DataSchemaSO schema = CreateTestSchema();
+            SchemaDrivenCsvParser parser = new SchemaDrivenCsvParser();
+            List<DataRecord> records = parser.Parse(csv, schema);
+
+            Assert.AreEqual(1, records.Count);
+            Assert.AreEqual(0, records[0].GetField("Power"));
+            Assert.AreEqual(0f, records[0].GetField("Speed"));
+            Assert.AreEqual(false, records[0].GetField("IsActive"));
+            Assert.IsInstanceOf<List<ParsedCondition>>(records[0].GetField("Requirements"));
+            Assert.AreEqual(0, ((List<ParsedCondition>)records[0].GetField("Requirements")).Count);
+        }
+
+        [Test]
         public void SchemaDrivenJsonParser_ParsesConditionListFromJsonArray()
         {
             const string json = "[{\"Id\":\"j1\",\"Name\":\"Runner\",\"Power\":12,\"Speed\":4.5,\"IsActive\":true,\"Requirements\":\"power>10&&speed<5\"}]";
@@ -226,6 +341,56 @@ namespace Tests.EditMode.Importer.Core.DynamicData
             Assert.AreEqual("speed", conditions[1].VariableName);
             Assert.AreEqual("<", conditions[1].Operator);
             Assert.That(conditions[1].Value, Is.EqualTo(5f).Within(0.001f));
+            Assert.AreEqual("AND", conditions[1].ConnectorFromPrevious);
+            Assert.AreEqual("&&", conditions[1].RawConnectorFromPrevious);
+        }
+
+        [Test]
+        public void SchemaDrivenJsonParser_ParsesSingleObjectRoot()
+        {
+            const string json = "{\"Id\":\"j2\",\"Name\":\"Solo\",\"Power\":5,\"Speed\":1.5,\"IsActive\":false,\"Requirements\":\"power>1\"}";
+
+            DataSchemaSO schema = CreateTestSchema();
+            SchemaDrivenJsonParser parser = new SchemaDrivenJsonParser();
+            List<DataRecord> records = parser.Parse(json, schema);
+
+            Assert.AreEqual(1, records.Count);
+            Assert.AreEqual("Solo", records[0].GetField("Name"));
+            Assert.AreEqual(5, records[0].GetField("Power"));
+        }
+
+        [Test]
+        public void SchemaDrivenJsonParser_IgnoresExtraFields_AndLeavesMissingFieldsNull()
+        {
+            const string json = "[{\"Id\":\"j3\",\"Name\":\"Partial\",\"Unknown\":\"x\"}]";
+
+            DataSchemaSO schema = CreateTestSchema();
+            SchemaDrivenJsonParser parser = new SchemaDrivenJsonParser();
+            List<DataRecord> records = parser.Parse(json, schema);
+
+            Assert.AreEqual(1, records.Count);
+            Assert.AreEqual("j3", records[0].GetField("Id"));
+            Assert.AreEqual("Partial", records[0].GetField("Name"));
+            Assert.IsNull(records[0].GetField("Unknown"));
+            Assert.IsNull(records[0].GetField("Power"));
+            Assert.IsNull(records[0].GetField("Requirements"));
+        }
+
+        [Test]
+        public void SchemaDrivenJsonParser_DefaultsInvalidTypedValues_AndTreatsNullRequirementAsEmptyList()
+        {
+            const string json = "[{\"Id\":\"j4\",\"Name\":\"Broken\",\"Power\":\"notInt\",\"Speed\":\"notFloat\",\"IsActive\":\"notBool\",\"Requirements\":null}]";
+
+            DataSchemaSO schema = CreateTestSchema();
+            SchemaDrivenJsonParser parser = new SchemaDrivenJsonParser();
+            List<DataRecord> records = parser.Parse(json, schema);
+
+            Assert.AreEqual(1, records.Count);
+            Assert.AreEqual(0, records[0].GetField("Power"));
+            Assert.AreEqual(0f, records[0].GetField("Speed"));
+            Assert.AreEqual(false, records[0].GetField("IsActive"));
+            Assert.IsInstanceOf<List<ParsedCondition>>(records[0].GetField("Requirements"));
+            Assert.AreEqual(0, ((List<ParsedCondition>)records[0].GetField("Requirements")).Count);
         }
 
         [Test]
@@ -245,6 +410,51 @@ namespace Tests.EditMode.Importer.Core.DynamicData
 
             Assert.AreEqual(1, jsonRecords.Count);
             Assert.AreEqual("ChooserJson", jsonRecords[0].GetField("Name"));
+        }
+
+        [Test]
+        public void DynamicDataImporter_DetectsJsonWhenExtensionMissing()
+        {
+            const string json = "[{\"Id\":\"j10\",\"Name\":\"AutoDetect\",\"Power\":1,\"Speed\":1,\"IsActive\":true,\"Requirements\":\"power>0\"}]";
+
+            DataSchemaSO schema = CreateTestSchema();
+            List<DataRecord> records = DynamicDataImporter.ImportRaw(json, string.Empty, schema);
+
+            Assert.AreEqual(1, records.Count);
+            Assert.AreEqual("AutoDetect", records[0].GetField("Name"));
+        }
+
+        [Test]
+        public void DynamicDataImporter_ImportFromSchema_ThrowsWhenSourceFileMissing()
+        {
+            DataSchemaSO schema = CreateTestSchema();
+
+            Assert.Throws<InvalidOperationException>(() => DynamicDataImporter.ImportFromSchema(schema));
+        }
+
+        [Test]
+        public void DynamicDataImporter_ImportFromSchema_UsesAssignedSourceFile()
+        {
+            const string csv = "Id,Name,Power,Speed,IsActive,Requirements\n" +
+                "c10,FromSchema,99,2.5,true,\"power>50\"";
+
+            DataSchemaSO schema = CreateTestSchema();
+            TextAsset sourceAsset = new TextAsset(csv)
+            {
+                name = "schema-data.csv"
+            };
+
+            // Assign sourceDataFile through SerializedObject path in a runtime-safe way for tests.
+            // Unity creates this field as private serialized data in the ScriptableObject.
+            typeof(DataSchemaSO)
+                .GetField("sourceDataFile", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                ?.SetValue(schema, sourceAsset);
+
+            List<DataRecord> records = DynamicDataImporter.ImportFromSchema(schema);
+
+            Assert.AreEqual(1, records.Count);
+            Assert.AreEqual("FromSchema", records[0].GetField("Name"));
+            Assert.AreEqual(99, records[0].GetField("Power"));
         }
     }
 }

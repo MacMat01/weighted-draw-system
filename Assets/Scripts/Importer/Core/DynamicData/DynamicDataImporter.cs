@@ -34,6 +34,26 @@ namespace Importer.Core.DynamicData
             return new List<DataRecord>();
         }
 
+        /// <summary>
+        ///     Imports data from the required TextAsset attached to the schema.
+        /// </summary>
+        public static List<DataRecord> ImportFromSchema(DataSchemaSO schema)
+        {
+            if (schema == null)
+            {
+                throw new ArgumentNullException(nameof(schema), "DynamicDataImporter: A DataSchemaSO is required.");
+            }
+
+            if (!schema.HasSourceDataFile())
+            {
+                throw new InvalidOperationException("DynamicDataImporter: DataSchemaSO requires an assigned CSV or JSON source file.");
+            }
+
+            TextAsset sourceFile = schema.SourceDataFile;
+            string extension = Path.GetExtension(sourceFile.name);
+            return ImportRaw(sourceFile.text, extension, schema);
+        }
+
         public static List<DataRecord> ImportFromTextAsset(TextAsset textAsset, DataSchemaSO schema)
         {
             if (textAsset == null)
