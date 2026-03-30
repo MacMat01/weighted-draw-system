@@ -54,7 +54,6 @@ List<DataRecord> records = DynamicDataImporter.ImportFromSchema(schema);
 - Reads file text and routes to parser logic.
 - If `schema` is `null`, import returns an empty list.
 
-### Internal routing behavior
 
 `DynamicDataImporter` uses a private raw import path that:
 
