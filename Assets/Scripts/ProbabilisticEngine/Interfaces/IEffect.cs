@@ -1,9 +1,7 @@
-﻿using ProbabilisticEngine.Runtime;
-
-namespace ProbabilisticEngine.Interfaces
+﻿namespace ProbabilisticEngine.Interfaces
 {
-    public interface IEffect
+    public interface IEffect<TState>
     {
-        void Apply(GameState state);
+        void Apply(TState state);
     }
 }

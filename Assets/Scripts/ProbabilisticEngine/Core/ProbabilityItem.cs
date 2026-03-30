@@ -12,7 +12,7 @@ namespace ProbabilisticEngine.Core
     /// </summary>
     public class ProbabilityItem<TState, TOption>
         where TState : IGameState
-        where TOption : IProbabilityOption
+        where TOption : IProbabilityOption<TState>
     {
         public string Id;
         public float BaseWeight;

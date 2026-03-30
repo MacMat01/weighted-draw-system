@@ -1,28 +1,40 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using ProbabilisticEngine.Interfaces;
-using ProbabilisticEngine.Runtime;
 
 namespace ProbabilisticEngine.Core
 {
-    public class ProbabilityOption : IProbabilityOption
+    /// <summary>
+    /// Versione generica di ProbabilityOption che implementa IProbabilityOption<TState>.
+    /// Include l'applicazione diretta di effetti allo stato di gioco.
+    /// 
+    /// Gli effetti sono COMPLETAMENTE OPZIONALI - un'opzione può non avere alcun effetto
+    /// e servire solo per rappresentare una scelta (narrativa, di direzione, etc.).
+    /// </summary>
+    public class ProbabilityOption<TState> : IProbabilityOption<TState>
+        where TState : IGameState
     {
-        public string Id { get; }
-        
-        public List<IEffect> Effects = new();
-        public List<IModifier> Modifiers = new();
-        
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
 
-        /**
-         *  TODO as future implementation
-         */
-        public float ApplyModifiers()
+        private readonly List<IEffect<TState>> _effects = new();
+        
+        public bool HasEffects => _effects.Count > 0;
+        public int EffectsCount => _effects.Count;
+        
+        public void AddEffect(IEffect<TState> effect)
         {
-            return 0f;
+            _effects.Add(effect);
         }
         
-        private float ApplyModifiers(float baseWeight, IGameState state)
+        public void ApplyEffects(TState state)
         {
-            return 0f; // TODO: implementare logica modificatori
+            foreach (var effect in _effects)
+            {
+                effect.Apply(state);
+            }
         }
+        
     }
 }

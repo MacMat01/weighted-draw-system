@@ -1,6 +1,4 @@
-﻿using ProbabilisticEngine.Runtime;
-
-namespace ProbabilisticEngine.Interfaces
+﻿namespace ProbabilisticEngine.Interfaces
 {
     public interface ICondition<TState> where TState : IGameState
     {

@@ -11,7 +11,7 @@ namespace ProbabilisticEngine.Core
     /// </summary>
     public class ProbabilityEngine<TState, TOption>
         where TState : IGameState
-        where TOption : IProbabilityOption
+        where TOption : IProbabilityOption<TState>
     {
         private readonly List<ProbabilityItem<TState, TOption>> _choices;
 
