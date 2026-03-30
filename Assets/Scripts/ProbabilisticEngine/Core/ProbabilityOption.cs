@@ -3,12 +3,12 @@ using ProbabilisticEngine.Interfaces;
 namespace ProbabilisticEngine.Core
 {
     /// <summary>
-    ///     Versione generica di ProbabilityOption che implementa IProbabilityOption
+    ///     Generic ProbabilityOption implementation of IProbabilityOption
     ///     <TState>
     ///         .
-    ///         Include l'applicazione diretta di effetti allo stato di gioco.
-    ///         Gli effetti sono COMPLETAMENTE OPZIONALI - un'opzione può non avere alcun effetto
-    ///         e servire solo per rappresentare una scelta (narrativa, di direzione, etc.).
+    ///         Includes direct application of effects to game state.
+    ///         Effects are completely optional: an option can have no effects
+    ///         and still represent a valid narrative or gameplay choice.
     /// </summary>
     public class ProbabilityOption<TState> : IProbabilityOption<TState>
         where TState : IGameState

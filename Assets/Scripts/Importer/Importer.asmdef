@@ -1,7 +1,9 @@
 ﻿{
   "name": "Importer",
   "rootNamespace": "",
-  "references": [],
+  "references": [
+    "ProbabilisticEngine"
+  ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

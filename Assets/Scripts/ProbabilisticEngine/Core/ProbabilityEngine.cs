@@ -5,8 +5,8 @@ using ProbabilisticEngine.Utils;
 namespace ProbabilisticEngine.Core
 {
     /// <summary>
-    ///     Versione generica del ProbabilityEngine.
-    ///     Gestisce un pool di ProbabilityItem e seleziona quelli validi.
+    ///     Generic version of the ProbabilityEngine.
+    ///     Manages a pool of ProbabilityItem instances and selects valid entries.
     /// </summary>
     public class ProbabilityEngine<TState, TOption>
         where TState : IGameState
@@ -20,8 +20,8 @@ namespace ProbabilisticEngine.Core
         }
 
         /// <summary>
-        ///     Filtra i ProbabilityItem che hanno le condizioni rispettate
-        ///     e restituisce la lista di quelli validi.
+        ///     Filters ProbabilityItem entries whose conditions are satisfied
+        ///     and returns the list of valid items.
         /// </summary>
         public List<ProbabilityItem<TState, TOption>> GetValidChoices(TState state)
         {
@@ -37,14 +37,14 @@ namespace ProbabilisticEngine.Core
                 return null;
             }
 
-            // Calcola i pesi per ogni choice valido
+            // Compute weights for each valid item.
             List<float> weights = validItems.Select(c => c.BaseWeight).ToList();
 
-            // Seleziona un choice in base ai pesi
+            // Select an item based on weighted randomness.
             int index = WeightedRandom.PickIndex(weights);
             ProbabilityItem<TState, TOption> selectedItem = validItems[index];
 
-            // Restituisce il ProbabilityItem selezionato (non valutato)
+            // Return the selected ProbabilityItem (option effects are not applied here).
             return selectedItem;
         }
     }

@@ -1,9 +1,9 @@
 ﻿namespace ProbabilisticEngine.Interfaces
 {
     /// <summary>
-    ///     Interfaccia generica per le opzioni di probabilità.
-    ///     Permette di rappresentare qualsiasi tipo di scelta (direzioni, azioni, dialoghi, ecc.)
-    ///     Ora include l'applicazione generica di effetti allo stato di gioco.
+    ///     Generic interface for probability options.
+    ///     Allows representing any kind of choice (directions, actions, dialogue, etc.).
+    ///     Includes generic effect application to game state.
     /// </summary>
     public interface IProbabilityOption<TState> where TState : IGameState
     {
@@ -16,8 +16,8 @@
         int EffectsCount { get; }
 
         /// <summary>
-        ///     Applica gli effetti dell'opzione allo stato di gioco.
-        ///     Questo metodo viene chiamato quando l'opzione viene selezionata.
+        ///     Applies this option's effects to the game state.
+        ///     This method is called when the option is selected.
         /// </summary>
         void ApplyEffects(TState state);
     }

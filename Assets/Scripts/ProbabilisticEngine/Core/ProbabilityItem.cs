@@ -4,8 +4,8 @@ using ProbabilisticEngine.Interfaces;
 namespace ProbabilisticEngine.Core
 {
     /// <summary>
-    ///     Versione completamente generica di ProbabilityItem.
-    ///     Funziona con qualsiasi tipo di stato e qualsiasi tipo di opzione.
+    ///     Fully generic ProbabilityItem.
+    ///     Works with any game state type and any option type.
     /// </summary>
     public class ProbabilityItem<TState, TOption>
         where TState : IGameState
@@ -18,7 +18,7 @@ namespace ProbabilisticEngine.Core
         [CanBeNull] public List<TOption> Options;
 
         /// <summary>
-        ///     Verifica se tutte le condizioni sono soddisfatte per lo stato dato.
+        ///     Checks whether all conditions are satisfied for the given state.
         /// </summary>
         public bool AreConditionsMet(TState state)
         {
