@@ -1,20 +1,19 @@
 ﻿using System.Collections.Generic;
-using Importer.Core.DynamicData;
+using Importer;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine.TestTools;
-
-namespace Tests.EditMode.Importer.Core.DynamicData
+namespace Tests.EditMode.DynamicData
 {
-    public class DynamicDataImporterJsonIntegrationTests
+    public class DynamicDataImporterCsvIntegrationTests
     {
-        private const string jsonAssetPath = "Assets/Scripts/Importer/DataSchema/DataSchema_ExampleJSON1.asset";
+        private const string csvAssetPath = "Assets/Scripts/Importer/DataSchema/DataSchema_ExampleCSV1.asset";
 
         [Test]
-        public void ImportFromSchema_ParsesJsonExample1_AllRowsAndFields()
+        public void ImportFromSchema_ParsesCsvExample1_AllRowsAndFields()
         {
-            DataSchemaSO schema = AssetDatabase.LoadAssetAtPath<DataSchemaSO>(jsonAssetPath);
-            Assert.IsNotNull(schema, $"Missing schema asset at '{jsonAssetPath}'.");
+            DataSchemaSO schema = AssetDatabase.LoadAssetAtPath<DataSchemaSO>(csvAssetPath);
+            Assert.IsNotNull(schema, $"Missing schema asset at '{csvAssetPath}'.");
             Assert.IsTrue(schema.HasSourceDataFile(), "Schema is expected to have a source TextAsset assigned.");
 
             List<DataRecord> records = DynamicDataImporter.ImportFromSchema(schema);
@@ -65,7 +64,7 @@ namespace Tests.EditMode.Importer.Core.DynamicData
                     LeftAttribute3 = 0,
                     LeftAttribute4 = 0,
                     LeftAttribute5 = -5,
-                    LeftFollowUp = null,
+                    LeftFollowUp = string.Empty,
                     PreConditionVariable = string.Empty,
                     RightAnswer = "Skip class and sleep.",
                     RightAttribute1 = 0,
@@ -90,7 +89,7 @@ namespace Tests.EditMode.Importer.Core.DynamicData
                     LeftAttribute3 = 10,
                     LeftAttribute4 = 20,
                     LeftAttribute5 = 0,
-                    LeftFollowUp = null,
+                    LeftFollowUp = string.Empty,
                     PreConditionVariable = string.Empty,
                     RightAnswer = "I'm too busy, sorry.",
                     RightAttribute1 = 5,
@@ -98,7 +97,7 @@ namespace Tests.EditMode.Importer.Core.DynamicData
                     RightAttribute3 = 0,
                     RightAttribute4 = -20,
                     RightAttribute5 = 0,
-                    RightFollowUp = null
+                    RightFollowUp = string.Empty
                 },
                 new ExpectedRow
                 {
@@ -115,7 +114,7 @@ namespace Tests.EditMode.Importer.Core.DynamicData
                     LeftAttribute3 = -20,
                     LeftAttribute4 = 0,
                     LeftAttribute5 = 0,
-                    LeftFollowUp = null,
+                    LeftFollowUp = string.Empty,
                     PreConditionVariable = string.Empty,
                     RightAnswer = "Ask parents for money.",
                     RightAttribute1 = 0,
@@ -123,7 +122,7 @@ namespace Tests.EditMode.Importer.Core.DynamicData
                     RightAttribute3 = 0,
                     RightAttribute4 = -10,
                     RightAttribute5 = 0,
-                    RightFollowUp = null
+                    RightFollowUp = string.Empty
                 },
                 new ExpectedRow
                 {
@@ -140,7 +139,7 @@ namespace Tests.EditMode.Importer.Core.DynamicData
                     LeftAttribute3 = 0,
                     LeftAttribute4 = 0,
                     LeftAttribute5 = -10,
-                    LeftFollowUp = null,
+                    LeftFollowUp = string.Empty,
                     PreConditionVariable = string.Empty,
                     RightAnswer = "Browse social media.",
                     RightAttribute1 = 5,
@@ -148,7 +147,7 @@ namespace Tests.EditMode.Importer.Core.DynamicData
                     RightAttribute3 = 0,
                     RightAttribute4 = 0,
                     RightAttribute5 = 0,
-                    RightFollowUp = null
+                    RightFollowUp = string.Empty
                 },
                 new ExpectedRow
                 {
@@ -165,7 +164,7 @@ namespace Tests.EditMode.Importer.Core.DynamicData
                     LeftAttribute3 = -20,
                     LeftAttribute4 = 0,
                     LeftAttribute5 = 0,
-                    LeftFollowUp = null,
+                    LeftFollowUp = string.Empty,
                     PreConditionVariable = "Finance",
                     PreConditionOperator = ">",
                     PreConditionValue = 40f,
@@ -175,7 +174,7 @@ namespace Tests.EditMode.Importer.Core.DynamicData
                     RightAttribute3 = 10,
                     RightAttribute4 = 0,
                     RightAttribute5 = 0,
-                    RightFollowUp = null
+                    RightFollowUp = string.Empty
                 },
                 new ExpectedRow
                 {
@@ -192,8 +191,8 @@ namespace Tests.EditMode.Importer.Core.DynamicData
                     LeftAttribute3 = 0,
                     LeftAttribute4 = -10,
                     LeftAttribute5 = 0,
-                    LeftFollowUp = null,
-                    PreConditionVariable = "Accademic_Performance",
+                    LeftFollowUp = string.Empty,
+                    PreConditionVariable = "Accademic Performance",
                     PreConditionOperator = "<",
                     PreConditionValue = 30f,
                     RightAnswer = "Get defensive.",
@@ -202,7 +201,7 @@ namespace Tests.EditMode.Importer.Core.DynamicData
                     RightAttribute3 = 0,
                     RightAttribute4 = -40,
                     RightAttribute5 = -5,
-                    RightFollowUp = null
+                    RightFollowUp = string.Empty
                 }
             };
 
@@ -284,5 +283,3 @@ namespace Tests.EditMode.Importer.Core.DynamicData
         }
     }
 }
-
-

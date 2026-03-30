@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using UnityEngine;
-namespace Importer.Core.DynamicData
+namespace Importer
 {
     /// <summary>
     ///     Shared type conversion helpers used by schema-driven CSV and JSON parsers.

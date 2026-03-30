@@ -1,5 +1,5 @@
 ﻿using System;
-namespace Importer.Core.DynamicData
+namespace Importer
 {
     /// <summary>
     ///     Represents a single parsed condition from a condition string.

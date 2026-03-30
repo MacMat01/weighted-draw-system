@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using Importer.Core.DynamicData;
+using Importer;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Debug = System.Diagnostics.Debug;
-namespace Tests.EditMode.Importer.Core.DynamicData
+namespace Tests.EditMode.DynamicData
 {
     public class SchemaDrivenCsvParserTests
     {

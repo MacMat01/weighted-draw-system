@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
-namespace Importer.Core.DynamicData
+namespace Importer
 {
     /// <summary>
     ///     Schema-driven CSV parser that reads CSV data according to a DataSchemaSO definition.

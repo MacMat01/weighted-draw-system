@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-namespace Importer.Core.DynamicData
+namespace Importer
 {
     /// <summary>
     ///     Central manager that routes raw data to the matching dynamic parser using file extension.

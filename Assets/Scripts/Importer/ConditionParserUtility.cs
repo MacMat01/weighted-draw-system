@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
-namespace Importer.Core.DynamicData
+namespace Importer
 {
     /// <summary>
     ///     Parses condition strings into structured ParsedCondition objects.

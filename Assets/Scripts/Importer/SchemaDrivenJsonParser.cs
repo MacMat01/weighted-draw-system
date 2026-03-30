@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
-namespace Importer.Core.DynamicData
+namespace Importer
 {
     /// <summary>
     ///     Schema-driven JSON parser that reads JSON objects according to a DataSchemaSO definition.
