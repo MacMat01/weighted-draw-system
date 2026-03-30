@@ -12,4 +12,68 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 299b7104e6df42f0b96a71c25303c34d, type: 3}
   m_Name: DataSchema
   m_EditorClassIdentifier: Core.DynamicData::Importer.Core.DynamicData.DataSchemaSO
-  columns: []
+  columns:
+  - ColumnName: Card_ID
+    DataType: 1
+    IsRequired: 1
+  - ColumnName: Card_Name
+    DataType: 0
+    IsRequired: 1
+  - ColumnName: Category
+    DataType: 0
+    IsRequired: 1
+  - ColumnName: Question
+    DataType: 0
+    IsRequired: 1
+  - ColumnName: Is_Unlocked
+    DataType: 3
+    IsRequired: 1
+  - ColumnName: Pre_Condition
+    DataType: 4
+    IsRequired: 0
+  - ColumnName: Weight
+    DataType: 1
+    IsRequired: 1
+  - ColumnName: Left_Answer
+    DataType: 0
+    IsRequired: 1
+  - ColumnName: Left_Attribute1
+    DataType: 1
+    IsRequired: 1
+  - ColumnName: Left_Attribute2
+    DataType: 1
+    IsRequired: 1
+  - ColumnName: Left_Attribute3
+    DataType: 1
+    IsRequired: 1
+  - ColumnName: Left_Attribute4
+    DataType: 1
+    IsRequired: 1
+  - ColumnName: Left_Attribute5
+    DataType: 1
+    IsRequired: 1
+  - ColumnName: Left_FollowUp
+    DataType: 0
+    IsRequired: 0
+  - ColumnName: Right_Answer
+    DataType: 0
+    IsRequired: 1
+  - ColumnName: Right_Attribute1
+    DataType: 1
+    IsRequired: 1
+  - ColumnName: Right_Attribute2
+    DataType: 1
+    IsRequired: 1
+  - ColumnName: Right_Attribute3
+    DataType: 1
+    IsRequired: 1
+  - ColumnName: Right_Attribute4
+    DataType: 1
+    IsRequired: 1
+  - ColumnName: Right_Attribute5
+    DataType: 1
+    IsRequired: 1
+  - ColumnName: Right_FollowUp
+    DataType: 0
+    IsRequired: 0
+  sourceDataFile: {fileID: 4900000, guid: 7b59ebfdee8857842a22cbc63f9344e7, type: 3}
