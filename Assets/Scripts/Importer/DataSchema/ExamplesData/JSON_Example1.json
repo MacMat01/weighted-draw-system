@@ -39,7 +39,7 @@
     "Question": "You look exhausted. Did you even prepare for today's pop quiz?",
     "Is_Unlocked": false,
     "Pre_Conditions": null,
-    "Weight": 999,
+    "Weight": 20,
     "Left_Choice": {
       "Answer": "Try my best.",
       "Attributes": {
@@ -135,7 +135,7 @@
     "Question": "The library is quiet and you have 4 hours. How do you spend them?",
     "Is_Unlocked": false,
     "Pre_Conditions": null,
-    "Weight": 999,
+    "Weight": 20,
     "Left_Choice": {
       "Answer": "Focus entirely on the exam.",
       "Attributes": {
@@ -199,7 +199,7 @@
     "Question": "Your professor called us about your attendance. What is going on with you?",
     "Is_Unlocked": false,
     "Pre_Conditions": "Accademic_Performance<30",
-    "Weight": 999,
+    "Weight": 20,
     "Left_Choice": {
       "Answer": "Apologize and promise to do better.",
       "Attributes": {

@@ -7,7 +7,10 @@ namespace ProbabilisticEngine.Utils
         public static int PickIndex(List<float> weights)
         {
             float total = 0f;
-            foreach (float w in weights) total += w;
+            foreach (float w in weights)
+            {
+                total += w;
+            }
 
             float r = Random.value * total;
 
