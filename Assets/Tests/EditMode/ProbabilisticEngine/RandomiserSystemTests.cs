@@ -31,6 +31,209 @@ namespace Tests.EditMode.ProbabilisticEngine
             AssertWeightedSelectionFromSchema(jsonAssetPath);
         }
 
+        [Test]
+        public void GetValidChoices_AutoResolvesConditionAndWeightColumns_FromSchemaFlags()
+        {
+            DataSchemaSO schema = CreateSchema("SpawnConditions", "Weight");
+            DataRecord pass = CreateRecord(1, 10, BuildConditions(new ParsedCondition("score", ">=", 5f)));
+            DataRecord fail = CreateRecord(2, 50, BuildConditions(new ParsedCondition("score", ">=", 10f)));
+
+            RandomiserSystem system = new RandomiserSystem(new[]
+            {
+                pass,
+                fail
+            }, schema);
+
+            List<DataRecord> valid = system.GetValidChoices(new Dictionary<string, object>
+            {
+                {
+                    "score", 7f
+                }
+            });
+
+            Assert.AreEqual(1, valid.Count);
+            Assert.AreEqual(1, valid[0].GetField("Card_ID"));
+            Assert.AreEqual(1, system.EvaluateRandom(new Dictionary<string, object>
+            {
+                {
+                    "score", 7f
+                }
+            })?.GetField("Card_ID"));
+        }
+
+        [Test]
+        public void Constructor_ExplicitColumnNames_OverrideSchemaFlags()
+        {
+            DataSchemaSO schema = CreateSchema("FlaggedConds", "FlaggedWeight");
+            DataRecord record = new DataRecord();
+            record.SetField("Card_ID", 11);
+            record.SetField("CustomConds", BuildConditions(new ParsedCondition("level", ">", 0f)));
+            record.SetField("CustomWeight", 3);
+
+            RandomiserSystem system = new RandomiserSystem(
+                new[]
+                {
+                    record
+                },
+                schema,
+                "CustomConds",
+                "CustomWeight");
+
+            DataRecord selected = system.EvaluateRandom(new Dictionary<string, object>
+            {
+                {
+                    "level", 1f
+                }
+            });
+
+            Assert.IsNotNull(selected);
+            Assert.AreEqual(11, selected.GetField("Card_ID"));
+        }
+
+        [Test]
+        public void GetValidChoices_MalformedConditionPayload_MakesRowUnselectable()
+        {
+            DataSchemaSO schema = CreateSchema("SpawnConditions", "Weight");
+            DataRecord malformed = new DataRecord();
+            malformed.SetField("Card_ID", 20);
+            malformed.SetField("Weight", 100);
+            malformed.SetField("SpawnConditions", "not-a-condition-list");
+
+            DataRecord valid = CreateRecord(21, 1, null);
+
+            RandomiserSystem system = new RandomiserSystem(new[]
+            {
+                malformed,
+                valid
+            }, schema);
+
+            List<DataRecord> choices = system.GetValidChoices(new Dictionary<string, object>());
+            Assert.AreEqual(1, choices.Count);
+            Assert.AreEqual(21, choices[0].GetField("Card_ID"));
+        }
+
+        [Test]
+        public void GetValidChoices_UnknownConnector_DefaultsToAnd()
+        {
+            DataSchemaSO schema = CreateSchema("SpawnConditions", "Weight");
+            DataRecord unknownConnector = CreateRecord(30, 1, BuildConditions(
+                new ParsedCondition("score", ">=", 1f),
+                new ParsedCondition("luck", "==", 1f, "XOR")));
+
+            DataRecord orConnector = CreateRecord(31, 1, BuildConditions(
+                new ParsedCondition("score", ">=", 1f),
+                new ParsedCondition("luck", "==", 1f, "OR")));
+
+            RandomiserSystem system = new RandomiserSystem(new[]
+            {
+                unknownConnector,
+                orConnector
+            }, schema);
+
+            List<DataRecord> valid = system.GetValidChoices(new Dictionary<string, object>
+            {
+                {
+                    "score", 1f
+                },
+                {
+                    "luck", 0f
+                }
+            });
+
+            Assert.AreEqual(1, valid.Count);
+            Assert.AreEqual(31, valid[0].GetField("Card_ID"));
+        }
+
+        [Test]
+        public void EvaluateRandom_OnlyPositiveWeightsCanBeDrawn_WhenAnyPositiveExists()
+        {
+            DataSchemaSO schema = CreateSchema("SpawnConditions", "Weight");
+            DataRecord positive = CreateRecord(40, "2", null);
+            DataRecord invalid = CreateRecord(41, "invalid", null);
+            DataRecord nonPositive = CreateRecord(42, 0, null);
+
+            RandomiserSystem system = new RandomiserSystem(new[]
+            {
+                positive,
+                invalid,
+                nonPositive
+            }, schema);
+
+            for (int i = 0; i < 400; i++)
+            {
+                DataRecord selected = system.EvaluateRandom(new Dictionary<string, object>());
+                Assert.AreEqual(40, selected?.GetField("Card_ID"));
+            }
+        }
+
+        [Test]
+        public void EvaluateRandom_FallsBackToUniform_WhenAllWeightsAreNonPositive()
+        {
+            DataSchemaSO schema = CreateSchema("SpawnConditions", "Weight");
+            DataRecord a = CreateRecord(50, -1, null);
+            DataRecord b = CreateRecord(51, 0, null);
+            DataRecord c = CreateRecord(52, "invalid", null);
+
+            RandomiserSystem system = new RandomiserSystem(new[]
+            {
+                a,
+                b,
+                c
+            }, schema);
+
+            Dictionary<int, int> hitCounts = new Dictionary<int, int>
+            {
+                {
+                    50, 0
+                },
+                {
+                    51, 0
+                },
+                {
+                    52, 0
+                }
+            };
+
+            const int draws = 9000;
+            for (int i = 0; i < draws; i++)
+            {
+                DataRecord selected = system.EvaluateRandom(new Dictionary<string, object>());
+                Assert.IsNotNull(selected);
+                int id = (int)selected.GetField("Card_ID");
+                hitCounts[id]++;
+            }
+
+            foreach (KeyValuePair<int, int> pair in hitCounts)
+            {
+                float share = pair.Value / (float)draws;
+                Assert.That(share, Is.EqualTo(1f / 3f).Within(0.07f), $"Uniform fallback share mismatch for card {pair.Key}.");
+            }
+        }
+
+        [Test]
+        public void GetValidChoices_MissingContextVariable_FailsCondition()
+        {
+            DataSchemaSO schema = CreateSchema("SpawnConditions", "Weight");
+            DataRecord needsMissingStat = CreateRecord(60, 1, BuildConditions(new ParsedCondition("missingStat", ">", 0f)));
+            DataRecord noConditions = CreateRecord(61, 1, null);
+
+            RandomiserSystem system = new RandomiserSystem(new[]
+            {
+                needsMissingStat,
+                noConditions
+            }, schema);
+
+            List<DataRecord> valid = system.GetValidChoices(new Dictionary<string, object>
+            {
+                {
+                    "otherStat", 10f
+                }
+            });
+
+            Assert.AreEqual(1, valid.Count);
+            Assert.AreEqual(61, valid[0].GetField("Card_ID"));
+        }
+
         private static void AssertWeightedSelectionFromSchema(string schemaAssetPath)
         {
             DataSchemaSO schema = AssetDatabase.LoadAssetAtPath<DataSchemaSO>(schemaAssetPath);
@@ -46,10 +249,18 @@ namespace Tests.EditMode.ProbabilisticEngine
 
             Dictionary<string, object> notMetContext = new Dictionary<string, object>
             {
-                { "Friendship", 0f },
-                { "Finance", 0f },
-                { "Accademic_Performance", 100f },
-                { "Accademic Performance", 100f }
+                {
+                    "Friendship", 0f
+                },
+                {
+                    "Finance", 0f
+                },
+                {
+                    "Accademic_Performance", 100f
+                },
+                {
+                    "Accademic Performance", 100f
+                }
             };
 
             List<DataRecord> notMetChoices = system.GetValidChoices(notMetContext);
@@ -72,10 +283,18 @@ namespace Tests.EditMode.ProbabilisticEngine
 
             Dictionary<string, object> metContext = new Dictionary<string, object>
             {
-                { "Friendship", 100f },
-                { "Finance", 100f },
-                { "Accademic_Performance", 0f },
-                { "Accademic Performance", 0f }
+                {
+                    "Friendship", 100f
+                },
+                {
+                    "Finance", 100f
+                },
+                {
+                    "Accademic_Performance", 0f
+                },
+                {
+                    "Accademic Performance", 0f
+                }
             };
 
             List<DataRecord> validChoices = system.GetValidChoices(metContext);
@@ -156,6 +375,43 @@ namespace Tests.EditMode.ProbabilisticEngine
 
             return weightColumns.Count != 1 ? null : weightColumns[0].ColumnName;
 
+        }
+
+        private static DataSchemaSO CreateSchema(string conditionColumnName, string weightColumnName)
+        {
+            DataSchemaSO schema = ScriptableObject.CreateInstance<DataSchemaSO>();
+            schema.Columns.Add(new ColumnDefinition("Card_ID", ColumnDataType.Int));
+
+            if (!string.IsNullOrWhiteSpace(conditionColumnName))
+            {
+                schema.Columns.Add(new ColumnDefinition(conditionColumnName, ColumnDataType.ConditionList));
+            }
+
+            if (!string.IsNullOrWhiteSpace(weightColumnName))
+            {
+                schema.Columns.Add(new ColumnDefinition(weightColumnName, ColumnDataType.WeightColumn));
+            }
+
+            return schema;
+        }
+
+        private static DataRecord CreateRecord(int cardId, object weightValue, List<ParsedCondition> conditions)
+        {
+            DataRecord record = new DataRecord();
+            record.SetField("Card_ID", cardId);
+            record.SetField("Weight", weightValue);
+
+            if (conditions != null)
+            {
+                record.SetField("SpawnConditions", conditions);
+            }
+
+            return record;
+        }
+
+        private static List<ParsedCondition> BuildConditions(params ParsedCondition[] conditions)
+        {
+            return conditions?.ToList() ?? new List<ParsedCondition>();
         }
     }
 }

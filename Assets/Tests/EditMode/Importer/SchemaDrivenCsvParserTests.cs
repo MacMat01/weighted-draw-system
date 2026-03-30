@@ -4,7 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Debug = System.Diagnostics.Debug;
-namespace Tests.EditMode.DynamicData
+namespace Tests.EditMode.Importer
 {
     public class SchemaDrivenCsvParserTests
     {

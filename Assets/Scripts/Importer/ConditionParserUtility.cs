@@ -55,7 +55,7 @@ namespace Importer
                 segmentStart = connectorMatch.Index + connectorMatch.Length;
             }
 
-            string finalSegment = trimmed.Substring(segmentStart).Trim();
+            string finalSegment = trimmed[segmentStart..].Trim();
             TryParseAndAdd(conditions, finalSegment, pendingConnector, pendingRawConnector);
 
             return conditions;

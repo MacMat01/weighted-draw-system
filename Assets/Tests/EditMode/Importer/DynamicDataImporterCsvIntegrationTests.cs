@@ -3,7 +3,7 @@ using Importer;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine.TestTools;
-namespace Tests.EditMode.DynamicData
+namespace Tests.EditMode.Importer
 {
     public class DynamicDataImporterCsvIntegrationTests
     {
@@ -57,7 +57,7 @@ namespace Tests.EditMode.DynamicData
                     Character = "Professor",
                     Question = "You look exhausted. Did you even prepare for today's pop quiz?",
                     IsUnlocked = false,
-                    Weight = 999,
+                    Weight = 30,
                     LeftAnswer = "Try my best.",
                     LeftAttribute1 = 0,
                     LeftAttribute2 = -20,
@@ -132,7 +132,7 @@ namespace Tests.EditMode.DynamicData
                     Character = "Library",
                     Question = "The library is quiet and you have 4 hours. How do you spend them?",
                     IsUnlocked = false,
-                    Weight = 999,
+                    Weight = 5,
                     LeftAnswer = "Focus entirely on the exam.",
                     LeftAttribute1 = -5,
                     LeftAttribute2 = 20,
@@ -184,7 +184,7 @@ namespace Tests.EditMode.DynamicData
                     Character = "Dad",
                     Question = "Your professor called us about your attendance. What is going on with you?",
                     IsUnlocked = false,
-                    Weight = 999,
+                    Weight = 25,
                     LeftAnswer = "Apologize and promise to do better.",
                     LeftAttribute1 = 0,
                     LeftAttribute2 = 10,

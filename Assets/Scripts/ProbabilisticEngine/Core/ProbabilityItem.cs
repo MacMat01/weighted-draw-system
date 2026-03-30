@@ -5,17 +5,16 @@ namespace ProbabilisticEngine.Core
 {
     /// <summary>
     ///     Fully generic ProbabilityItem.
-    ///     Works with any game state type and any option type.
+    ///     Stores any payload type and evaluates optional conditions against a game state.
     /// </summary>
-    public class ProbabilityItem<TState, TOption>
+    public class ProbabilityItem<TState, TValue>
         where TState : IGameState
-        where TOption : IProbabilityOption<TState>
     {
         public float BaseWeight;
 
         [CanBeNull] public List<ICondition<TState>> Conditions;
         public string Id;
-        [CanBeNull] public List<TOption> Options;
+        public TValue Value;
 
         /// <summary>
         ///     Checks whether all conditions are satisfied for the given state.

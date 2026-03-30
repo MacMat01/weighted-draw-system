@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using Importer;
-using ProbabilisticEngine.Utils;
+using ProbabilisticEngine.Interfaces;
 using UnityEngine;
-using Random = UnityEngine.Random;
 namespace ProbabilisticEngine.Core
 {
     /// <summary>
@@ -13,7 +13,7 @@ namespace ProbabilisticEngine.Core
     public sealed class RandomiserSystem
     {
         private readonly string conditionColumnName;
-        private readonly List<DataRecord> items;
+        private readonly ProbabilityEngine<DictionaryGameState, DataRecord> probabilityEngine;
         private readonly string weightColumnName;
 
         private RandomiserSystem(
@@ -21,9 +21,9 @@ namespace ProbabilisticEngine.Core
             string conditionColumnName,
             string weightColumnName = null)
         {
-            this.items = items != null ? new List<DataRecord>(items) : new List<DataRecord>();
             this.conditionColumnName = conditionColumnName;
             this.weightColumnName = weightColumnName;
+            probabilityEngine = new ProbabilityEngine<DictionaryGameState, DataRecord>(CreateProbabilityItems(items));
         }
 
         public RandomiserSystem(
@@ -47,16 +47,11 @@ namespace ProbabilisticEngine.Core
         /// </summary>
         public List<DataRecord> GetValidChoices(IReadOnlyDictionary<string, object> gameStateContext)
         {
-            List<DataRecord> valid = new List<DataRecord>();
-            foreach (DataRecord item in items)
-            {
-                if (item != null && AreItemConditionsMet(item, gameStateContext))
-                {
-                    valid.Add(item);
-                }
-            }
-
-            return valid;
+            DictionaryGameState state = new DictionaryGameState(gameStateContext);
+            return probabilityEngine.GetValidChoices(state)
+                .Select(static item => item.Value)
+                .Where(static item => item != null)
+                .ToList();
         }
 
         /// <summary>
@@ -64,95 +59,81 @@ namespace ProbabilisticEngine.Core
         /// </summary>
         public DataRecord EvaluateRandom(IReadOnlyDictionary<string, object> gameStateContext)
         {
-            List<DataRecord> validItems = GetValidChoices(gameStateContext);
-            if (validItems.Count == 0)
-            {
-                return null;
-            }
-
-            List<float> weights = BuildWeights(validItems);
-            float totalWeight = 0f;
-            foreach (float weight in weights)
-            {
-                totalWeight += weight;
-            }
-
-            if (totalWeight <= 0f)
-            {
-                int uniformIndex = Random.Range(0, validItems.Count);
-                return validItems[uniformIndex];
-            }
-
-            int weightedIndex = WeightedRandom.PickIndex(weights);
-            return validItems[weightedIndex];
+            DictionaryGameState state = new DictionaryGameState(gameStateContext);
+            ProbabilityItem<DictionaryGameState, DataRecord> selected = probabilityEngine.EvaluateRandom(state);
+            return selected?.Value;
         }
 
-        private bool AreItemConditionsMet(DataRecord item, IReadOnlyDictionary<string, object> gameStateContext)
+        private IEnumerable<ProbabilityItem<DictionaryGameState, DataRecord>> CreateProbabilityItems(IEnumerable<DataRecord> sourceItems)
+        {
+            if (sourceItems == null)
+            {
+                yield break;
+            }
+
+            foreach (DataRecord item in sourceItems)
+            {
+                if (item == null)
+                {
+                    continue;
+                }
+
+                yield return new ProbabilityItem<DictionaryGameState, DataRecord>
+                {
+                    Id = item.GetField("Card_ID")?.ToString(),
+                    Value = item,
+                    BaseWeight = ResolveWeight(item),
+                    Conditions = BuildConditions(item)
+                };
+            }
+        }
+
+        private float ResolveWeight(DataRecord item)
+        {
+            if (string.IsNullOrWhiteSpace(weightColumnName))
+            {
+                return 1f;
+            }
+
+            object rawWeight = item.GetField(weightColumnName);
+            if (TryConvertToFloat(rawWeight, out float parsedWeight) && parsedWeight > 0f)
+            {
+                return parsedWeight;
+            }
+
+            return 0f;
+        }
+
+        private List<ICondition<DictionaryGameState>> BuildConditions(DataRecord item)
         {
             if (string.IsNullOrWhiteSpace(conditionColumnName))
             {
-                return true;
+                return null;
             }
 
             object rawConditionList = item.GetField(conditionColumnName);
             if (rawConditionList == null)
             {
-                return true;
+                return null;
             }
 
             if (rawConditionList is not List<ParsedCondition> parsedConditions)
             {
-                return false;
+                return new List<ICondition<DictionaryGameState>>
+                {
+                    new AlwaysFalseCondition()
+                };
             }
 
             if (parsedConditions.Count == 0)
             {
-                return true;
+                return null;
             }
 
-            bool aggregate = EvaluateCondition(parsedConditions[0], gameStateContext);
-            for (int i = 1; i < parsedConditions.Count; i++)
+            return new List<ICondition<DictionaryGameState>>
             {
-                ParsedCondition condition = parsedConditions[i];
-                bool current = EvaluateCondition(condition, gameStateContext);
-
-                if (string.Equals(condition.ConnectorFromPrevious, "OR", StringComparison.OrdinalIgnoreCase))
-                {
-                    aggregate = aggregate || current;
-                }
-                else
-                {
-                    // Default to AND when connector metadata is missing or malformed.
-                    aggregate = aggregate && current;
-                }
-            }
-
-            return aggregate;
-        }
-
-        private List<float> BuildWeights(IReadOnlyList<DataRecord> validItems)
-        {
-            List<float> weights = new List<float>(validItems.Count);
-            foreach (DataRecord item in validItems)
-            {
-                if (string.IsNullOrWhiteSpace(weightColumnName))
-                {
-                    weights.Add(1f);
-                    continue;
-                }
-
-                object rawWeight = item.GetField(weightColumnName);
-                if (TryConvertToFloat(rawWeight, out float parsedWeight) && parsedWeight > 0f)
-                {
-                    weights.Add(parsedWeight);
-                }
-                else
-                {
-                    weights.Add(0f);
-                }
-            }
-
-            return weights;
+                new ParsedConditionChainCondition(parsedConditions)
+            };
         }
 
         private static bool EvaluateCondition(ParsedCondition condition, IReadOnlyDictionary<string, object> gameStateContext)
@@ -271,6 +252,59 @@ namespace ProbabilisticEngine.Core
             }
 
             return null;
+        }
+
+        private sealed class DictionaryGameState : IGameState
+        {
+            public DictionaryGameState(IReadOnlyDictionary<string, object> values)
+            {
+                Values = values;
+            }
+
+            public IReadOnlyDictionary<string, object> Values { get; }
+        }
+
+        private sealed class AlwaysFalseCondition : ICondition<DictionaryGameState>
+        {
+            public bool Evaluate(DictionaryGameState state)
+            {
+                return false;
+            }
+        }
+
+        private sealed class ParsedConditionChainCondition : ICondition<DictionaryGameState>
+        {
+            private readonly IReadOnlyList<ParsedCondition> conditions;
+
+            public ParsedConditionChainCondition(IReadOnlyList<ParsedCondition> conditions)
+            {
+                this.conditions = conditions;
+            }
+
+            public bool Evaluate(DictionaryGameState state)
+            {
+                if (conditions == null || conditions.Count == 0)
+                {
+                    return true;
+                }
+
+                bool aggregate = EvaluateCondition(conditions[0], state?.Values);
+                for (int i = 1; i < conditions.Count; i++)
+                {
+                    ParsedCondition condition = conditions[i];
+                    bool current = EvaluateCondition(condition, state?.Values);
+                    if (string.Equals(condition.ConnectorFromPrevious, "OR", StringComparison.OrdinalIgnoreCase))
+                    {
+                        aggregate = aggregate || current;
+                    }
+                    else
+                    {
+                        aggregate = aggregate && current;
+                    }
+                }
+
+                return aggregate;
+            }
         }
     }
 }

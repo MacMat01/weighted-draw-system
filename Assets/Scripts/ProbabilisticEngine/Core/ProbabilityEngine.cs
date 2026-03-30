@@ -2,47 +2,52 @@
 using System.Linq;
 using ProbabilisticEngine.Interfaces;
 using ProbabilisticEngine.Utils;
+using Random = UnityEngine.Random;
 namespace ProbabilisticEngine.Core
 {
     /// <summary>
     ///     Generic version of the ProbabilityEngine.
     ///     Manages a pool of ProbabilityItem instances and selects valid entries.
     /// </summary>
-    public class ProbabilityEngine<TState, TOption>
+    public class ProbabilityEngine<TState, TValue>
         where TState : IGameState
-        where TOption : IProbabilityOption<TState>
     {
-        private readonly List<ProbabilityItem<TState, TOption>> _items;
+        private readonly List<ProbabilityItem<TState, TValue>> items;
 
-        public ProbabilityEngine(IEnumerable<ProbabilityItem<TState, TOption>> items)
+        public ProbabilityEngine(IEnumerable<ProbabilityItem<TState, TValue>> items)
         {
-            _items = items.ToList();
+            this.items = items != null ? items.ToList() : new List<ProbabilityItem<TState, TValue>>();
         }
 
         /// <summary>
         ///     Filters ProbabilityItem entries whose conditions are satisfied
         ///     and returns the list of valid items.
         /// </summary>
-        public List<ProbabilityItem<TState, TOption>> GetValidChoices(TState state)
+        public List<ProbabilityItem<TState, TValue>> GetValidChoices(TState state)
         {
-            return _items.Where(item => item.AreConditionsMet(state)).ToList();
+            return items.Where(item => item != null && item.AreConditionsMet(state)).ToList();
         }
 
-        public ProbabilityItem<TState, TOption> EvaluateRandom(TState state)
+        public ProbabilityItem<TState, TValue> EvaluateRandom(TState state)
         {
-            List<ProbabilityItem<TState, TOption>> validItems = GetValidChoices(state);
+            List<ProbabilityItem<TState, TValue>> validItems = GetValidChoices(state);
 
             if (validItems.Count == 0)
             {
                 return null;
             }
 
-            // Compute weights for each valid item.
-            List<float> weights = validItems.Select(c => c.BaseWeight).ToList();
+            List<float> weights = validItems.Select(static item => item.BaseWeight > 0f ? item.BaseWeight : 0f).ToList();
+            float totalWeight = weights.Sum();
+            if (totalWeight <= 0f)
+            {
+                int uniformIndex = Random.Range(0, validItems.Count);
+                return validItems[uniformIndex];
+            }
 
             // Select an item based on weighted randomness.
             int index = WeightedRandom.PickIndex(weights);
-            ProbabilityItem<TState, TOption> selectedItem = validItems[index];
+            ProbabilityItem<TState, TValue> selectedItem = validItems[index];
 
             // Return the selected ProbabilityItem (option effects are not applied here).
             return selectedItem;
