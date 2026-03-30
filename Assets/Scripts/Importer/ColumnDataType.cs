@@ -9,6 +9,7 @@
         Int,
         Float,
         Bool,
-        ConditionList
+        ConditionList,
+        WeightColumn
     }
 }

@@ -2,7 +2,8 @@
   "name": "ProbabilisticEngine.Tests",
   "rootNamespace": "",
   "references": [
-
+    "ProbabilisticEngine",
+    "Importer"
   ],
   "optionalUnityReferences": [
     "TestAssemblies"

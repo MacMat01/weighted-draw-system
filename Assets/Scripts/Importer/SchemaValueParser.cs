@@ -38,6 +38,14 @@ namespace Importer
                         return ParseBoolOrDefault(trimmed, false, $"SchemaDrivenCsvParser: Failed to parse '{columnName}' as Bool at row {rowNumber}. Value: '{cellValue}'. Defaulting to false.");
                     case ColumnDataType.ConditionList:
                         return ConditionParserUtility.Parse(trimmed);
+                    case ColumnDataType.WeightColumn:
+                        if (int.TryParse(trimmed, NumberStyles.Integer, CultureInfo.InvariantCulture, out int weightIntValue))
+                        {
+                            return weightIntValue;
+                        }
+
+                        Debug.LogWarning($"SchemaDrivenCsvParser: Failed to parse '{columnName}' as WeightColumn at row {rowNumber}. Value: '{cellValue}'. Defaulting to 0.");
+                        return 0;
                     default:
                         Debug.LogWarning($"SchemaDrivenCsvParser: Unknown data type '{dataType}' for column '{columnName}' at row {rowNumber}.");
                         return null;
@@ -78,6 +86,14 @@ namespace Importer
                     return ParseBoolOrDefault(value, false, $"SchemaDrivenJsonParser: Failed to parse '{columnName}' as Bool at item {itemIndex}. Value: '{value}'. Defaulting to false.");
                 case ColumnDataType.ConditionList:
                     return ConditionParserUtility.Parse(value);
+                case ColumnDataType.WeightColumn:
+                    if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int weightIntValue))
+                    {
+                        return weightIntValue;
+                    }
+
+                    Debug.LogWarning($"SchemaDrivenJsonParser: Failed to parse '{columnName}' as WeightColumn at item {itemIndex}. Value: '{value}'. Defaulting to 0.");
+                    return 0;
                 default:
                     return null;
             }

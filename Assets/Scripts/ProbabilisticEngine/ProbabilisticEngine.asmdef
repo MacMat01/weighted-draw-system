@@ -2,7 +2,7 @@
   "name": "ProbabilisticEngine",
   "rootNamespace": "",
   "references": [
-
+    "Importer"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

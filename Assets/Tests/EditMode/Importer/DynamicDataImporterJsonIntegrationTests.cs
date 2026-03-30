@@ -7,7 +7,7 @@ namespace Tests.EditMode.DynamicData
 {
     public class DynamicDataImporterJsonIntegrationTests
     {
-        private const string jsonAssetPath = "Assets/Scripts/Importer/DataSchema/DataSchema_ExampleJSON1.asset";
+        private const string jsonAssetPath = "Assets/Scripts/Importer/DataSchema/DataSchema_JSON_Example1.asset";
 
         [Test]
         public void ImportFromSchema_ParsesJsonExample1_AllRowsAndFields()
@@ -15,6 +15,8 @@ namespace Tests.EditMode.DynamicData
             DataSchemaSO schema = AssetDatabase.LoadAssetAtPath<DataSchemaSO>(jsonAssetPath);
             Assert.IsNotNull(schema, $"Missing schema asset at '{jsonAssetPath}'.");
             Assert.IsTrue(schema.HasSourceDataFile(), "Schema is expected to have a source TextAsset assigned.");
+            string sourceAssetPath = AssetDatabase.GetAssetPath(schema.SourceDataFile);
+            Assert.That(sourceAssetPath, Does.EndWith(".json").IgnoreCase);
 
             List<DataRecord> records = DynamicDataImporter.ImportFromSchema(schema);
 
