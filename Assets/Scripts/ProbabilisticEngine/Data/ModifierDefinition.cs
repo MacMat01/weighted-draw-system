@@ -1,6 +1,7 @@
-﻿namespace ProbabilisticEngine.Data
+﻿using System;
+namespace ProbabilisticEngine.Data
 {
-    [System.Serializable]
+    [Serializable]
     public class ModifierDefinition
     {
         public string Type;

@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-
+﻿using System.Collections.Generic;
+using UnityEngine;
 namespace ProbabilisticEngine.Utils
 {
     public static class WeightedRandom
@@ -8,14 +7,16 @@ namespace ProbabilisticEngine.Utils
         public static int PickIndex(List<float> weights)
         {
             float total = 0f;
-            foreach (var w in weights) total += w;
+            foreach (float w in weights) total += w;
 
-            float r = UnityEngine.Random.value * total;
+            float r = Random.value * total;
 
             for (int i = 0; i < weights.Count; i++)
             {
                 if (r < weights[i])
+                {
                     return i;
+                }
 
                 r -= weights[i];
             }

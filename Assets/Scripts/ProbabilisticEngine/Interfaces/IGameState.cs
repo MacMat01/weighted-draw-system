@@ -1,4 +1,6 @@
 ﻿namespace ProbabilisticEngine.Interfaces
 {
-    public interface IGameState { }
+    public interface IGameState
+    {
+    }
 }
