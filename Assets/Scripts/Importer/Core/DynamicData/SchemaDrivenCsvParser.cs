@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Text;
 using UnityEngine;
 namespace Importer.Core.DynamicData
@@ -27,9 +26,24 @@ namespace Importer.Core.DynamicData
             }
 
             List<string> headers = ParseRecord(records[0]);
-            Dictionary<string, int> columnIndexMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, int> columnIndexMap = BuildColumnIndexMap(headers);
             HashSet<string> missingSchemaColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+            for (int rowIndex = 1; rowIndex < records.Count; rowIndex++)
+            {
+                int rowNumber = rowIndex + 1;
+                if (TryParseDataRow(records[rowIndex], rowNumber, schema, columnIndexMap, missingSchemaColumns, out DataRecord dataRecord))
+                {
+                    results.Add(dataRecord);
+                }
+            }
+
+            return results;
+        }
+
+        private static Dictionary<string, int> BuildColumnIndexMap(List<string> headers)
+        {
+            Dictionary<string, int> columnIndexMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < headers.Count; i++)
             {
                 string header = headers[i]?.Trim() ?? string.Empty;
@@ -39,134 +53,95 @@ namespace Importer.Core.DynamicData
                 }
             }
 
-            for (int rowIndex = 1; rowIndex < records.Count; rowIndex++)
-            {
-                string record = records[rowIndex];
-                if (string.IsNullOrWhiteSpace(record))
-                {
-                    continue;
-                }
-
-                List<string> values = ParseRecord(record);
-                DataRecord dataRecord = new DataRecord();
-                bool rowHasErrors = false;
-
-                foreach (ColumnDefinition columnDef in schema.Columns)
-                {
-                    if (!columnIndexMap.TryGetValue(columnDef.ColumnName, out int columnIndex))
-                    {
-                        if (missingSchemaColumns.Add(columnDef.ColumnName))
-                        {
-                            Debug.LogWarning($"SchemaDrivenCsvParser: Column '{columnDef.ColumnName}' from schema not found in CSV headers. It will be skipped.");
-                        }
-
-                        // Check if this required column is missing from CSV
-                        if (columnDef.IsRequired)
-                        {
-                            Debug.LogError($"SchemaDrivenCsvParser: Required column '{columnDef.ColumnName}' not found in CSV at row {rowIndex + 1}.");
-                            rowHasErrors = true;
-                        }
-
-                        continue;
-                    }
-
-                    if (columnIndex >= values.Count)
-                    {
-                        // Check if this required column is missing value
-                        if (columnDef.IsRequired)
-                        {
-                            Debug.LogError($"SchemaDrivenCsvParser: Required column '{columnDef.ColumnName}' is empty at row {rowIndex + 1}.");
-                            rowHasErrors = true;
-                        }
-                        continue;
-                    }
-
-                    string cellValue = values[columnIndex];
-
-                    // Check if required column is empty
-                    if (columnDef.IsRequired && string.IsNullOrWhiteSpace(cellValue))
-                    {
-                        Debug.LogError($"SchemaDrivenCsvParser: Required column '{columnDef.ColumnName}' is empty at row {rowIndex + 1}.");
-                        rowHasErrors = true;
-                        continue;
-                    }
-
-                    object parsedValue = ParseCellValue(cellValue, columnDef.DataType, columnDef.ColumnName, rowIndex + 1);
-                    dataRecord.SetField(columnDef.ColumnName, parsedValue);
-                }
-
-                // Skip this row if it has required field errors
-                if (rowHasErrors)
-                {
-                    Debug.LogWarning($"SchemaDrivenCsvParser: Skipping row {rowIndex + 1} due to missing required fields.");
-                    continue;
-                }
-
-                results.Add(dataRecord);
-            }
-
-            return results;
+            return columnIndexMap;
         }
 
-        private static object ParseCellValue(string cellValue, ColumnDataType dataType, string columnName, int rowNumber)
+        private static bool TryParseDataRow(
+            string record,
+            int rowNumber,
+            DataSchemaSO schema,
+            IReadOnlyDictionary<string, int> columnIndexMap,
+            ISet<string> missingSchemaColumns,
+            out DataRecord dataRecord)
         {
-            string trimmed = cellValue?.Trim() ?? string.Empty;
-
-            try
+            dataRecord = null;
+            if (string.IsNullOrWhiteSpace(record))
             {
-                switch (dataType)
+                return false;
+            }
+
+            List<string> values = ParseRecord(record);
+            DataRecord parsedRecord = new DataRecord();
+            bool rowHasRequiredFieldErrors = false;
+
+            foreach (ColumnDefinition columnDef in schema.Columns)
+            {
+                if (!TryParseColumnValue(columnDef, values, rowNumber, columnIndexMap, missingSchemaColumns, parsedRecord))
                 {
-                    case ColumnDataType.String:
-                        return trimmed;
-
-                    case ColumnDataType.Int:
-                        if (int.TryParse(trimmed, NumberStyles.Integer, CultureInfo.InvariantCulture, out int intValue))
-                        {
-                            return intValue;
-                        }
-
-                        Debug.LogWarning($"SchemaDrivenCsvParser: Failed to parse '{columnName}' as Int at row {rowNumber}. Value: '{cellValue}'. Defaulting to 0.");
-                        return 0;
-
-                    case ColumnDataType.Float:
-                        if (float.TryParse(trimmed, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float floatValue))
-                        {
-                            return floatValue;
-                        }
-
-                        Debug.LogWarning($"SchemaDrivenCsvParser: Failed to parse '{columnName}' as Float at row {rowNumber}. Value: '{cellValue}'. Defaulting to 0.");
-                        return 0f;
-
-                    case ColumnDataType.Bool:
-                        if (bool.TryParse(trimmed, out bool boolValue))
-                        {
-                            return boolValue;
-                        }
-
-                        switch (trimmed)
-                        {
-                            case "0":
-                                return false;
-                            case "1":
-                                return true;
-                            default:
-                                Debug.LogWarning($"SchemaDrivenCsvParser: Failed to parse '{columnName}' as Bool at row {rowNumber}. Value: '{cellValue}'. Defaulting to false.");
-                                return false;
-                        }
-
-                    case ColumnDataType.ConditionList:
-                        return ConditionParserUtility.Parse(trimmed);
-
-                    default:
-                        Debug.LogWarning($"SchemaDrivenCsvParser: Unknown data type '{dataType}' for column '{columnName}' at row {rowNumber}.");
-                        return null;
+                    rowHasRequiredFieldErrors = true;
                 }
             }
-            catch (Exception exception)
+
+            if (rowHasRequiredFieldErrors)
             {
-                Debug.LogWarning($"SchemaDrivenCsvParser: Exception parsing '{columnName}' at row {rowNumber}: {exception.Message}");
-                return null;
+                Debug.LogWarning($"SchemaDrivenCsvParser: Skipping row {rowNumber} due to missing required fields.");
+                return false;
             }
+
+            dataRecord = parsedRecord;
+            return true;
+        }
+
+        private static bool TryParseColumnValue(
+            ColumnDefinition columnDef,
+            IReadOnlyList<string> values,
+            int rowNumber,
+            IReadOnlyDictionary<string, int> columnIndexMap,
+            ISet<string> missingSchemaColumns,
+            DataRecord dataRecord)
+        {
+            if (columnDef == null || string.IsNullOrWhiteSpace(columnDef.ColumnName))
+            {
+                return true;
+            }
+
+            if (!columnIndexMap.TryGetValue(columnDef.ColumnName, out int columnIndex))
+            {
+                if (missingSchemaColumns.Add(columnDef.ColumnName))
+                {
+                    Debug.LogWarning($"SchemaDrivenCsvParser: Column '{columnDef.ColumnName}' from schema not found in CSV headers. It will be skipped.");
+                }
+
+                if (columnDef.IsRequired)
+                {
+                    Debug.LogError($"SchemaDrivenCsvParser: Required column '{columnDef.ColumnName}' not found in CSV at row {rowNumber}.");
+                    return false;
+                }
+
+                return true;
+            }
+
+            if (columnIndex >= values.Count)
+            {
+                if (columnDef.IsRequired)
+                {
+                    Debug.LogError($"SchemaDrivenCsvParser: Required column '{columnDef.ColumnName}' is empty at row {rowNumber}.");
+                    return false;
+                }
+
+                return true;
+            }
+
+            string cellValue = values[columnIndex];
+            if (columnDef.IsRequired && string.IsNullOrWhiteSpace(cellValue))
+            {
+                Debug.LogError($"SchemaDrivenCsvParser: Required column '{columnDef.ColumnName}' is empty at row {rowNumber}.");
+                return false;
+            }
+
+            object parsedValue = SchemaValueParser.ParseCsvCell(cellValue, columnDef.DataType, columnDef.ColumnName, rowNumber);
+            dataRecord.SetField(columnDef.ColumnName, parsedValue);
+            return true;
         }
 
         private List<string> SplitRecords(string rawText)

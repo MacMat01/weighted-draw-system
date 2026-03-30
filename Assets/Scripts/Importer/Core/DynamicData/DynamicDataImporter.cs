@@ -12,7 +12,7 @@ namespace Importer.Core.DynamicData
         private static readonly SchemaDrivenCsvParser CsvParser = new SchemaDrivenCsvParser();
         private static readonly SchemaDrivenJsonParser JsonParser = new SchemaDrivenJsonParser();
 
-        public static List<DataRecord> ImportRaw(string rawText, string extension, DataSchemaSO schema)
+        private static List<DataRecord> ImportRaw(string rawText, string extension, DataSchemaSO schema)
         {
             if (string.IsNullOrWhiteSpace(rawText) || schema == null)
             {
@@ -20,14 +20,9 @@ namespace Importer.Core.DynamicData
             }
 
             string normalizedExtension = NormalizeExtension(extension, rawText);
-            if (string.Equals(normalizedExtension, ".csv", StringComparison.OrdinalIgnoreCase))
+            if (TryParseByExtension(rawText, schema, normalizedExtension, out List<DataRecord> records))
             {
-                return CsvParser.Parse(rawText, schema);
-            }
-
-            if (string.Equals(normalizedExtension, ".json", StringComparison.OrdinalIgnoreCase))
-            {
-                return JsonParser.Parse(rawText, schema);
+                return records;
             }
 
             Debug.LogWarning($"DynamicDataImporter: Unsupported extension '{normalizedExtension}'.");
@@ -91,6 +86,24 @@ namespace Importer.Core.DynamicData
             }
 
             return ".csv";
+        }
+
+        private static bool TryParseByExtension(string rawText, DataSchemaSO schema, string normalizedExtension, out List<DataRecord> records)
+        {
+            records = null;
+            if (string.Equals(normalizedExtension, ".csv", StringComparison.OrdinalIgnoreCase))
+            {
+                records = CsvParser.Parse(rawText, schema);
+                return true;
+            }
+
+            if (string.Equals(normalizedExtension, ".json", StringComparison.OrdinalIgnoreCase))
+            {
+                records = JsonParser.Parse(rawText, schema);
+                return true;
+            }
+
+            return false;
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Text;
 using UnityEngine;
 namespace Importer.Core.DynamicData
@@ -19,63 +18,16 @@ namespace Importer.Core.DynamicData
                 return results;
             }
 
-            string trimmed = rawJson.Trim();
-            List<string> objectPayloads = new List<string>();
-
-            if (trimmed.StartsWith("[", StringComparison.Ordinal))
+            if (!TryExtractObjectPayloads(rawJson, out List<string> objectPayloads))
             {
-                objectPayloads.AddRange(SplitTopLevelObjects(trimmed));
-            }
-            else if (trimmed.StartsWith("{", StringComparison.Ordinal))
-            {
-                objectPayloads.Add(trimmed);
-            }
-            else
-            {
-                Debug.LogWarning("SchemaDrivenJsonParser: JSON must start with '{' or '['.");
                 return results;
             }
 
             for (int i = 0; i < objectPayloads.Count; i++)
             {
-                Dictionary<string, string> properties = ParseObjectProperties(objectPayloads[i]);
-                DataRecord record = new DataRecord();
-                bool objectHasErrors = false;
-
-                foreach (ColumnDefinition column in schema.Columns)
+                int itemNumber = i + 1;
+                if (!TryParseObject(objectPayloads[i], schema, itemNumber, out DataRecord record))
                 {
-                    if (column == null || string.IsNullOrWhiteSpace(column.ColumnName))
-                    {
-                        continue;
-                    }
-
-                    if (!properties.TryGetValue(column.ColumnName, out string rawValue))
-                    {
-                        // Check if this required column is missing
-                        if (column.IsRequired)
-                        {
-                            Debug.LogError($"SchemaDrivenJsonParser: Required field '{column.ColumnName}' not found at item {i + 1}.");
-                            objectHasErrors = true;
-                        }
-                        continue;
-                    }
-
-                    // Check if required field is null or empty
-                    if (column.IsRequired && string.IsNullOrWhiteSpace(rawValue))
-                    {
-                        Debug.LogError($"SchemaDrivenJsonParser: Required field '{column.ColumnName}' is empty at item {i + 1}.");
-                        objectHasErrors = true;
-                        continue;
-                    }
-
-                    object parsedValue = ParseValue(rawValue, column.DataType, column.ColumnName, i + 1);
-                    record.SetField(column.ColumnName, parsedValue);
-                }
-
-                // Skip this record if it has required field errors
-                if (objectHasErrors)
-                {
-                    Debug.LogWarning($"SchemaDrivenJsonParser: Skipping item {i + 1} due to missing required fields.");
                     continue;
                 }
 
@@ -85,56 +37,78 @@ namespace Importer.Core.DynamicData
             return results;
         }
 
-        private static object ParseValue(string rawValue, ColumnDataType dataType, string columnName, int itemIndex)
+        private static bool TryExtractObjectPayloads(string rawJson, out List<string> objectPayloads)
         {
-            string value = rawValue ?? string.Empty;
-
-            switch (dataType)
+            objectPayloads = new List<string>();
+            string trimmed = rawJson.Trim();
+            if (trimmed.StartsWith("[", StringComparison.Ordinal))
             {
-                case ColumnDataType.String:
-                    return rawValue;
-
-                case ColumnDataType.Int:
-                    if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int intValue))
-                    {
-                        return intValue;
-                    }
-
-                    Debug.LogWarning($"SchemaDrivenJsonParser: Failed to parse '{columnName}' as Int at item {itemIndex}. Value: '{value}'. Defaulting to 0.");
-                    return 0;
-
-                case ColumnDataType.Float:
-                    if (float.TryParse(value, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out float floatValue))
-                    {
-                        return floatValue;
-                    }
-
-                    Debug.LogWarning($"SchemaDrivenJsonParser: Failed to parse '{columnName}' as Float at item {itemIndex}. Value: '{value}'. Defaulting to 0.");
-                    return 0f;
-
-                case ColumnDataType.Bool:
-                    if (bool.TryParse(value, out bool boolValue))
-                    {
-                        return boolValue;
-                    }
-
-                    switch (value)
-                    {
-                        case "0":
-                            return false;
-                        case "1":
-                            return true;
-                        default:
-                            Debug.LogWarning($"SchemaDrivenJsonParser: Failed to parse '{columnName}' as Bool at item {itemIndex}. Value: '{value}'. Defaulting to false.");
-                            return false;
-                    }
-
-                case ColumnDataType.ConditionList:
-                    return ConditionParserUtility.Parse(value);
-
-                default:
-                    return null;
+                objectPayloads.AddRange(SplitTopLevelObjects(trimmed));
+                return true;
             }
+
+            if (trimmed.StartsWith("{", StringComparison.Ordinal))
+            {
+                objectPayloads.Add(trimmed);
+                return true;
+            }
+
+            Debug.LogWarning("SchemaDrivenJsonParser: JSON must start with '{' or '['.");
+            return false;
+        }
+
+        private static bool TryParseObject(string payload, DataSchemaSO schema, int itemNumber, out DataRecord record)
+        {
+            record = null;
+            Dictionary<string, string> properties = ParseObjectProperties(payload);
+            DataRecord parsedRecord = new DataRecord();
+            bool hasRequiredFieldErrors = false;
+
+            foreach (ColumnDefinition column in schema.Columns)
+            {
+                if (!TryParseColumnValue(column, properties, itemNumber, parsedRecord))
+                {
+                    hasRequiredFieldErrors = true;
+                }
+            }
+
+            if (hasRequiredFieldErrors)
+            {
+                Debug.LogWarning($"SchemaDrivenJsonParser: Skipping item {itemNumber} due to missing required fields.");
+                return false;
+            }
+
+            record = parsedRecord;
+            return true;
+        }
+
+        private static bool TryParseColumnValue(ColumnDefinition column, IReadOnlyDictionary<string, string> properties, int itemNumber, DataRecord record)
+        {
+            if (column == null || string.IsNullOrWhiteSpace(column.ColumnName))
+            {
+                return true;
+            }
+
+            if (!properties.TryGetValue(column.ColumnName, out string rawValue))
+            {
+                if (column.IsRequired)
+                {
+                    Debug.LogError($"SchemaDrivenJsonParser: Required field '{column.ColumnName}' not found at item {itemNumber}.");
+                    return false;
+                }
+
+                return true;
+            }
+
+            if (column.IsRequired && string.IsNullOrWhiteSpace(rawValue))
+            {
+                Debug.LogError($"SchemaDrivenJsonParser: Required field '{column.ColumnName}' is empty at item {itemNumber}.");
+                return false;
+            }
+
+            object parsedValue = SchemaValueParser.ParseJsonValue(rawValue, column.DataType, column.ColumnName, itemNumber);
+            record.SetField(column.ColumnName, parsedValue);
+            return true;
         }
 
         private static List<string> SplitTopLevelObjects(string jsonArray)
@@ -347,10 +321,12 @@ namespace Importer.Core.DynamicData
 
         private static void AddPropertyAlias(Dictionary<string, string> destination, string alias, string value)
         {
-            if (string.IsNullOrWhiteSpace(alias) || !destination.TryAdd(alias, value))
+            if (string.IsNullOrWhiteSpace(alias))
             {
+                return;
             }
 
+            destination.TryAdd(alias, value);
         }
 
         private static string SingularizeToken(string token)
