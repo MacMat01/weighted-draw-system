@@ -1,104 +1,147 @@
 ﻿# Dynamic Data Importer
 
-This document explains how the importer in `Assets/Scripts/Importer/Core/DynamicData` reads CSV/JSON text and turns it into typed `DataRecord` objects.
+This guide is written for two audiences:
 
-## Overview
+- **Designers** who want to configure and use the importer without touching code.
+- **Developers** who may maintain or extend parser behavior.
 
-The importer is schema-driven:
+The importer lives in `Assets/Scripts/Importer/Core/DynamicData` and converts CSV/JSON into typed `DataRecord` objects.
 
-1. A `DataSchemaSO` defines expected columns and types.
-2. `DynamicDataImporter` chooses CSV or JSON parsing based on extension (or content sniffing).
-3. The selected parser converts raw values into typed fields.
-4. Each row/object becomes one `DataRecord`.
-5. `ConditionList` fields are parsed into `List<ParsedCondition>`.
+## Start Here
 
-## Main Types
+If your goal is "import my data and use it in gameplay," follow this path.
 
-- `DataSchemaSO`: ScriptableObject holding:
-  - `columns` (`List<ColumnDefinition>`)
-  - `sourceDataFile` (`TextAsset`)
-- `ColumnDefinition`: `{ ColumnName, DataType }`
-- `ColumnDataType`: `String`, `Int`, `Float`, `Bool`, `ConditionList`
-- `DataRecord`: dynamic dictionary-like container (`SetField`, `GetField`)
-- `ParsedCondition`: structured condition item with optional connector metadata
+### 1) Create and configure a schema
 
-## Entry Points (`DynamicDataImporter`)
+1. Create a `DataSchemaSO` asset (`Create > Importer > Data Schema`).
+2. Add entries in `Columns`.
+3. For each entry:
+   - set `ColumnName` to match your CSV header or JSON property name
+   - set `DataType` (`String`, `Int`, `Float`, `Bool`, `ConditionList`)
+   - enable `IsRequired` for fields that must exist and must not be empty
+4. Assign your source `TextAsset` to `SourceDataFile`.
+
+### 2) Author source files correctly
+
+- CSV headers are matched case-insensitively.
+- JSON properties are matched case-insensitively.
+- Extra columns/properties not listed in schema are ignored.
+- Missing optional fields are allowed.
+- Missing/empty required fields cause that row/object to be skipped.
+
+### 3) Import data
+
+Typical import call:
+
+```csharp
+List<DataRecord> records = DynamicDataImporter.ImportFromSchema(schema);
+```
+
+### 4) Understand common outcomes
+
+- If import returns fewer rows than expected, check Console logs first.
+- Warnings usually mean a value could not be converted and default was used.
+- Errors on required fields mean that row/object is rejected.
+
+## Behavior Overview
+
+1. `DataSchemaSO` defines expected columns, types, and required flags.
+2. `DynamicDataImporter` selects CSV vs JSON by extension (or by content sniffing when extension is missing).
+3. Parser converts each schema column to a typed value.
+4. Each accepted row/object becomes a `DataRecord`.
+5. `ConditionList` values become `List<ParsedCondition>`.
+
+Rows/objects that fail required-field checks are skipped.
+
+## Data Types and Conversion Rules
+
+### `String`
+
+- CSV: value is trimmed.
+- JSON: raw parsed string value is used (can be `null`).
+
+### `Int`
+
+- Parsed with invariant culture.
+- Invalid value logs warning and defaults to `0`.
+
+### `Float`
+
+- Parsed with invariant culture.
+- Invalid value logs warning and defaults to `0f`.
+
+### `Bool`
+
+- Accepts `true`/`false` and `1`/`0`.
+- Invalid value logs warning and defaults to `false`.
+
+### `ConditionList`
+
+- Parsed by `ConditionParserUtility` into `List<ParsedCondition>`.
+- Empty/null condition text returns an empty list.
+
+## Entry Points
+
+### `DynamicDataImporter`
 
 ### `ImportRaw(string rawText, string extension, DataSchemaSO schema)`
 
-- Returns empty list when text is blank or schema is null.
+- Returns empty list if `rawText` is blank or `schema` is null.
 - Normalizes extension:
-  - Explicit extension wins (`csv`, `.csv`, `json`, `.json`)
-  - If extension missing: text starting with `{` or `[` is treated as JSON
-  - Otherwise treated as CSV
-- Routes to:
-  - `SchemaDrivenCsvParser.Parse(...)`
-  - `SchemaDrivenJsonParser.Parse(...)`
+  - explicit extension wins (`csv`, `.csv`, `json`, `.json`)
+  - no extension + leading `{`/`[` => JSON
+  - otherwise => CSV
+- Routes to `SchemaDrivenCsvParser.Parse(...)` or `SchemaDrivenJsonParser.Parse(...)`.
 - Unsupported extension logs warning and returns empty list.
 
 ### `ImportFromSchema(DataSchemaSO schema)`
 
 - Throws `ArgumentNullException` if schema is null.
-- Throws `InvalidOperationException` if schema has no `sourceDataFile`.
-- Uses `sourceDataFile.name` extension and `sourceDataFile.text` as input.
+- Throws `InvalidOperationException` if `SourceDataFile` is missing.
+- Uses `sourceDataFile.name` extension and `sourceDataFile.text` content.
 
 ### `ImportFromTextAsset(TextAsset textAsset, DataSchemaSO schema)`
 
-- Returns empty list when `textAsset` is null.
-- Uses asset name extension and text content.
+- Returns empty list if `textAsset` is null.
+- Uses `textAsset.name` and `textAsset.text`.
+- Null schema returns empty list via `ImportRaw(...)`.
 
 ### `ImportFromFilePath(string filePath, DataSchemaSO schema)`
 
-- Returns empty list when path is blank or file does not exist.
-- Reads file text from disk and routes via extension.
+- Returns empty list if path is empty or missing on disk.
+- Reads file then routes through `ImportRaw(...)`.
+- Null schema returns empty list via `ImportRaw(...)`.
 
-## CSV Parsing (`SchemaDrivenCsvParser`)
+## Parser Details
 
-CSV parser behavior:
+### CSV (`SchemaDrivenCsvParser`)
 
-- Splits records while respecting quoted fields.
-- Supports:
-  - CRLF and LF line endings
-  - blank line skipping
-  - escaped quotes (`""`) inside quoted fields
-  - commas and newlines inside quoted fields
-- Uses first record as header row.
-- Header matching is case-insensitive.
-- For each schema column:
-  - If header missing: logs warning once per missing column name and skips it.
-  - If cell exists: converts value based on `ColumnDataType`.
+- Handles quoted commas, escaped quotes (`""`), multiline quoted fields, LF/CRLF.
+- First non-empty record is treated as header row.
+- Missing schema header logs warning once per missing column.
+- Missing/empty required values log error and invalidate row.
+- Invalid row is skipped and logs warning (`Skipping row ...`).
 
-Type conversion rules:
+### JSON (`SchemaDrivenJsonParser`)
 
-- `String`: trimmed string
-- `Int`: `int.TryParse` (InvariantCulture), default `0` on failure
-- `Float`: `float.TryParse` (InvariantCulture), default `0f` on failure
-- `Bool`: `bool.TryParse`; also accepts `0`/`1`; default `false` on failure
-- `ConditionList`: parsed by `ConditionParserUtility.Parse`
-
-## JSON Parsing (`SchemaDrivenJsonParser`)
-
-JSON parser behavior:
-
-- Accepts root as:
-  - array of objects (`[...]`)
-  - single object (`{...}`)
+- Supports object root (`{...}`) and array root (`[...]`).
 - Other root forms are rejected with warning.
-- Uses a lightweight parser to:
-  - split top-level objects in arrays
-  - parse object properties case-insensitively
-  - decode common escaped characters in strings
-- Only schema-defined keys are imported.
-- Missing schema keys are left unset (`GetField(...)` returns `null`).
-- Extra JSON keys are ignored.
+- Required checks:
+  - missing required key => invalid object
+  - null/empty/whitespace on required key => invalid object
+- Invalid object is skipped and logs warning (`Skipping item ...`).
 
-Type conversion rules match CSV defaults:
+### Nested JSON alias expansion
 
-- Invalid `Int` -> `0`
-- Invalid `Float` -> `0f`
-- Invalid `Bool` -> `false`
-- `ConditionList` uses `ConditionParserUtility.Parse`
-- JSON `null` values are converted to empty string before conversion (for `ConditionList`, this yields an empty list)
+JSON parser expands nested objects into flat aliases so schemas can stay flat.
+
+Examples of generated aliases include:
+
+- `Left_Choice_Answer`
+- `Left_Answer`
+- `Left_Attribute1`, `Left_Attribute2`, ...
+
+This supports card-like payloads with nested choice/attribute objects.
 
 ## Condition Syntax (`ConditionParserUtility`)
 
@@ -115,47 +158,46 @@ Connector normalization:
 - `AND`: `&&`, `&`, `and`, `;`
 - `OR`: `||`, `|`, `or`
 
-Boolean flag shorthand:
+Supported shorthand:
 
-- `alchemy` -> `alchemy == 1`
-- `!cursed` -> `cursed != 1`
+- `alchemy` => `alchemy == 1`
+- `!cursed` => `cursed != 1`
 
-Robustness details:
+Supported literals:
 
-- Empty/null/whitespace input returns empty list.
-- Malformed segments are skipped.
-- Valid segments around malformed ones are still kept.
-- Leading/trailing connectors are tolerated.
-- First parsed condition has no connector metadata.
+- `TRUE`, `FALSE` (case-insensitive)
 
-## Typical Usage
+Robustness behavior:
 
-1. Create a `DataSchemaSO` asset.
-2. Add column definitions with names matching CSV headers or JSON property names.
-3. Assign a CSV/JSON `TextAsset` to `sourceDataFile`.
-4. Import:
+- Empty/null/whitespace input => empty condition list
+- Malformed segments are skipped
+- Valid segments around malformed segments are preserved
+- Connector metadata starts from the second parsed condition
 
-```csharp
-List<DataRecord> records = DynamicDataImporter.ImportFromSchema(schema);
-```
+## Troubleshooting
 
-Or with raw text:
+- **Rows missing after import**: check required fields and empty values first.
+- **Unexpected zeros/false**: source value likely failed type parse and defaulted.
+- **Condition not working**: verify operator/connectors and variable naming format.
+- **JSON nested fields not mapping**: confirm schema column uses one of the generated alias forms.
 
-```csharp
-List<DataRecord> records = DynamicDataImporter.ImportRaw(rawText, ".csv", schema);
-```
+## Source of Truth (Tests)
 
-## Verified Behaviors (Tests)
+Current behavior is covered in:
 
-Behavior examples are covered in:
+- `Assets/Tests/EditMode/Importer/Core/DynamicData/SchemaDrivenCsvParserTests.cs`
+- `Assets/Tests/EditMode/Importer/Core/DynamicData/SchemaDrivenJsonParserTests.cs`
+- `Assets/Tests/EditMode/Importer/Core/DynamicData/DynamicDataImporterCsvIntegrationTests.cs`
+- `Assets/Tests/EditMode/Importer/Core/DynamicData/DynamicDataImporterJsonIntegrationTests.cs`
 
-- `Assets/Tests/EditMode/Importer/Core/DynamicData/DataRecordConditionParsingTests.cs`
+Notable covered scenarios:
 
-Notable test cases include:
+- CSV quoting/escaping, multiline fields, CRLF, blank row skipping
+- JSON object array and single-object roots
+- required vs optional behavior, including whitespace-only required failures
+- parse-default behavior for invalid numbers/bools
+- condition operators/connectors/flags/literals and malformed segment tolerance
+- nested JSON alias mapping to flat schema columns
 
-- Extension routing and JSON auto-detection
-- CSV quoted commas, escaped quotes, multiline fields, CRLF, blank lines
-- Typed conversion defaults for invalid values
-- Condition operators/connectors/flags and malformed segment handling
-- `ImportFromSchema` exception behavior when source file is missing
+Current test scope is parser behavior plus `ImportFromSchema(...)` integration using example schema assets.
 
