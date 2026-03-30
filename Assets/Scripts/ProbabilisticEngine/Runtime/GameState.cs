@@ -4,7 +4,7 @@ namespace ProbabilisticEngine.Runtime
 {
     public class GameState
     {
-        private Dictionary<string, int> _resources = new();
+        private Dictionary<string, int> _resources = new(); // TO DO - MAKE RESOURCES GENERAL
         private HashSet<string> _flags = new();
         private Dictionary<string, string> _context = new();
 
@@ -17,7 +17,7 @@ namespace ProbabilisticEngine.Runtime
         public string GetContext(string key) => _context.TryGetValue(key, out var v) ? v : null;
         public void SetContext(string key, string value) => _context[key] = value;
 
-        public bool IsOnCooldown(string optionId, int turns) => false; // implementazione futura
+        public bool IsOnCooldown(string optionId, int turns) => false; // TO DO
         public bool HasSeenOption => false; // placeholder
     }
 }
