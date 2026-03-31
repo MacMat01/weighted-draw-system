@@ -11,8 +11,8 @@ namespace ProbabilityEngine.Tests.Tests.EditMode.ProbabilityEngine
 {
     public class RandomiserSystemTests
     {
-        private const string csvAssetPath = "Assets/Scripts/Importer/DataSchema/DataSchema_CSV_Example1.asset";
-        private const string jsonAssetPath = "Assets/Scripts/Importer/DataSchema/DataSchema_JSON_Example1.asset";
+        private const string csvAssetPath = "Assets/Scripts/SchemaImporter/Schema/ExamplesData/DataSchema_CSV_Example1.asset";
+        private const string jsonAssetPath = "Assets/Scripts/SchemaImporter/Schema/ExamplesData/DataSchema_JSON_Example1.asset";
 
         [SetUp]
         public void SetUp()

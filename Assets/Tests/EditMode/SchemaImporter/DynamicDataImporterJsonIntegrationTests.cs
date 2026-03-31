@@ -8,7 +8,7 @@ namespace SchemaImporter.Tests.Tests.EditMode.SchemaImporter
 {
     public class DynamicDataImporterJsonIntegrationTests
     {
-        private const string jsonAssetPath = "Assets/Scripts/Importer/DataSchema/DataSchema_JSON_Example1.asset";
+        private const string jsonAssetPath = "Assets/Scripts/SchemaImporter/Schema/ExamplesData/DataSchema_JSON_Example1.asset";
 
         [Test]
         public void ImportFromSchema_ParsesJsonExample1_AllRowsAndFields()

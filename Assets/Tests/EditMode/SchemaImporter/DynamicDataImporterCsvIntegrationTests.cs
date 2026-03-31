@@ -8,7 +8,7 @@ namespace SchemaImporter.Tests.Tests.EditMode.SchemaImporter
 {
     public class DynamicDataImporterCsvIntegrationTests
     {
-        private const string csvAssetPath = "Assets/Scripts/Importer/DataSchema/DataSchema_CSV_Example1.asset";
+        private const string csvAssetPath = "Assets/Scripts/SchemaImporter/Schema/ExamplesData/DataSchema_CSV_Example1.asset";
 
         [Test]
         public void ImportFromSchema_ParsesCsvExample1_AllRowsAndFields()
