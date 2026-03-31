@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
-using Importer;
 using NUnit.Framework;
+using SchemaImporter.Parsers;
+using SchemaImporter.Schema;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Debug = System.Diagnostics.Debug;

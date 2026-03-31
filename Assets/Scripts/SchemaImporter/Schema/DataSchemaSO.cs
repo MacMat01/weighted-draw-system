@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-namespace Importer
+namespace SchemaImporter.Schema
 {
     /// <summary>
     ///     ScriptableObject that defines the schema for data import.

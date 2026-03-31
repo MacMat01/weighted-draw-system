@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
-using ProbabilisticEngine.Interfaces;
-namespace ProbabilisticEngine.Core
+using ProbabilityEngine.Interfaces;
+namespace ProbabilityEngine.Core
 {
     /// <summary>
     ///     Fully generic ProbabilityItem.

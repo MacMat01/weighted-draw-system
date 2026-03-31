@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Globalization;
+using SchemaImporter.Schema;
 using UnityEngine;
-namespace Importer
+namespace SchemaImporter.Parsers
 {
     /// <summary>
     ///     Shared type conversion helpers used by schema-driven CSV and JSON parsers.

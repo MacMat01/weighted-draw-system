@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-namespace ProbabilisticEngine.Utils
+namespace ProbabilityEngine.Utils
 {
     public static class WeightedRandom
     {

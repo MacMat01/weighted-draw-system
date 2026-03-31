@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using SchemaImporter.Schema;
 using UnityEngine;
-namespace Importer
+namespace SchemaImporter.Parsers
 {
     /// <summary>
     ///     Schema-driven JSON parser that reads JSON objects according to a DataSchemaSO definition.

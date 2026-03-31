@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using ProbabilisticEngine.Core;
-using ProbabilisticEngine.Interfaces;
+using ProbabilityEngine.Core;
+using ProbabilityEngine.Interfaces;
 using Random = UnityEngine.Random;
 
 namespace Tests.EditMode.ProbabilisticEngine
@@ -93,9 +93,15 @@ namespace Tests.EditMode.ProbabilisticEngine
 
             Dictionary<string, int> hitCounts = new Dictionary<string, int>
             {
-                { "a", 0 },
-                { "b", 0 },
-                { "c", 0 }
+                {
+                    "a", 0
+                },
+                {
+                    "b", 0
+                },
+                {
+                    "c", 0
+                }
             };
 
             const int draws = 9000;

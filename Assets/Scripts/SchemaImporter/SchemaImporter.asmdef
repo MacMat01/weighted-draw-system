@@ -1,9 +1,7 @@
 ﻿{
-  "name": "ProbabilisticEngine",
+  "name": "SchemaImporter",
   "rootNamespace": "",
-  "references": [
-    "Importer"
-  ],
+  "references": [],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

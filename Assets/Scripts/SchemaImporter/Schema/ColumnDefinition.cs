@@ -1,5 +1,5 @@
 ﻿using System;
-namespace Importer
+namespace SchemaImporter.Schema
 {
     /// <summary>
     ///     Defines a single column in a CSV schema.

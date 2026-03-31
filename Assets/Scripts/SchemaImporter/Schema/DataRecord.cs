@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-namespace Importer
+namespace SchemaImporter.Schema
 {
     /// <summary>
     ///     Represents a single parsed row from a CSV file.

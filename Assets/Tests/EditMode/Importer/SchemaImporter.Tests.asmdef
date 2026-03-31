@@ -1,9 +1,8 @@
-﻿{
-  "name": "ProbabilisticEngine.Tests",
+{
+  "name": "SchemaImporter.Tests",
   "rootNamespace": "",
   "references": [
-    "ProbabilisticEngine",
-    "Importer"
+    "SchemaImporter"
   ],
   "optionalUnityReferences": [
     "TestAssemblies"

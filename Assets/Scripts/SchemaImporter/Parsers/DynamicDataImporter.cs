@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using SchemaImporter.Schema;
 using UnityEngine;
-namespace Importer
+namespace SchemaImporter.Parsers
 {
     /// <summary>
     ///     Central manager that routes raw data to the matching dynamic parser using file extension.

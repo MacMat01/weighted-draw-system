@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using ProbabilisticEngine.Interfaces;
-using ProbabilisticEngine.Utils;
+using ProbabilityEngine.Interfaces;
+using ProbabilityEngine.Utils;
 using Random = UnityEngine.Random;
-namespace ProbabilisticEngine.Core
+namespace ProbabilityEngine.Core
 {
     /// <summary>
     ///     Generic version of the ProbabilityEngine.

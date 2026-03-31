@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using SchemaImporter.Schema;
 using UnityEngine;
-namespace Importer
+namespace SchemaImporter.Parsers
 {
     /// <summary>
     ///     Schema-driven CSV parser that reads CSV data according to a DataSchemaSO definition.

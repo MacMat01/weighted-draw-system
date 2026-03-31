@@ -1,4 +1,4 @@
-﻿namespace ProbabilisticEngine.Interfaces
+﻿namespace ProbabilityEngine.Interfaces
 {
     public interface ICondition<in TState> where TState : IGameState
     {

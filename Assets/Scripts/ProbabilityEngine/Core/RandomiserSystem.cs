@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Importer;
-using ProbabilisticEngine.Interfaces;
+using ProbabilityEngine.Interfaces;
+using SchemaImporter.Parsers;
+using SchemaImporter.Schema;
 using UnityEngine;
-namespace ProbabilisticEngine.Core
+namespace ProbabilityEngine.Core
 {
     /// <summary>
     ///     Filters imported DataRecord rows by ParsedCondition lists and selects one valid row at random.

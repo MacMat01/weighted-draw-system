@@ -1,5 +1,5 @@
 ﻿using System;
-namespace Importer
+namespace SchemaImporter.Parsers
 {
     /// <summary>
     ///     Represents a single parsed condition from a condition string.

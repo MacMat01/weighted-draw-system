@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Importer;
 using NUnit.Framework;
-using ProbabilisticEngine.Core;
+using ProbabilityEngine.Core;
+using SchemaImporter.Parsers;
+using SchemaImporter.Schema;
 using UnityEditor;
 using UnityEngine;
 namespace Tests.EditMode.ProbabilisticEngine

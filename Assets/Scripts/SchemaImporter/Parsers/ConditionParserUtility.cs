@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
-namespace Importer
+namespace SchemaImporter.Parsers
 {
     /// <summary>
     ///     Parses condition strings into structured ParsedCondition objects.
