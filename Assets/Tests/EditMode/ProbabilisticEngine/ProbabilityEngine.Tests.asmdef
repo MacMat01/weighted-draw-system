@@ -1,6 +1,6 @@
 ﻿{
   "name": "ProbabilityEngine.Tests",
-  "rootNamespace": "",
+  "rootNamespace": "ProbabilityEngine.Tests",
   "references": [
     "ProbabilityEngine",
     "SchemaImporter"
