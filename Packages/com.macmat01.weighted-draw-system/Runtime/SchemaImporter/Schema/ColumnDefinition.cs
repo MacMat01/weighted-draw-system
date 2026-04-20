@@ -13,6 +13,13 @@ namespace SchemaImporter.Schema
         public ColumnDataType DataType;
         public bool IsRequired;
 
+        public ColumnDefinition(string columnName)
+        {
+            ColumnName = columnName;
+            DataType = ColumnDataType.String;
+            IsRequired = false;
+        }
+
         public ColumnDefinition(string columnName, ColumnDataType dataType, bool isRequired = false)
         {
             ColumnName = columnName;
