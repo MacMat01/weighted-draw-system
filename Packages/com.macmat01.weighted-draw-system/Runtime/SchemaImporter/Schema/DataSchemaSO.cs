@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -22,6 +23,9 @@ namespace SchemaImporter.Schema
         [Tooltip("CSV or JSON TextAsset used as the import source for this schema.")]
         [SerializeField]
         private TextAsset sourceDataFile;
+        
+        [SerializeField, HideInInspector]
+        private string lastImportedFileName;
 
         public List<ColumnDefinition> Columns => columns;
         public TextAsset SourceDataFile => sourceDataFile;
@@ -30,26 +34,40 @@ namespace SchemaImporter.Schema
         {
             return sourceDataFile != null;
         }
-        
+
         private void OnValidate()
         {
             if (sourceDataFile == null)
+            {
+                ResetDataSource();
+                return;
+            }
+            
+            if (lastImportedFileName == sourceDataFile.name)
                 return;
             
-            string text = sourceDataFile.text;
+            lastImportedFileName = sourceDataFile.name;
+            GenerateColumnsFromCSV();
+        }
 
+        private void GenerateColumnsFromCSV()
+        {
+            string text = sourceDataFile.text;
             if (string.IsNullOrWhiteSpace(text))
                 return;
-            
-            string firstLine = text.Split('\n').FirstOrDefault();
-            if (string.IsNullOrWhiteSpace(firstLine))
-                return;
-            
+
+            string firstLine = text.Split('\n')[0];
             string[] headers = firstLine.Split(',');
 
             columns = headers
                 .Select(h => new ColumnDefinition(h.Trim()))
                 .ToList();
-        }        
+        }
+
+        private void ResetDataSource()
+        {
+            lastImportedFileName = null;
+            columns.Clear();
+        }
     }
 }
