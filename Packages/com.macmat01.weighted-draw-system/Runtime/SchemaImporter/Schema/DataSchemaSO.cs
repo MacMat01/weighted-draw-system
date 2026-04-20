@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using UnityEngine;
 namespace SchemaImporter.Schema
 {
@@ -28,5 +30,26 @@ namespace SchemaImporter.Schema
         {
             return sourceDataFile != null;
         }
+        
+        private void OnValidate()
+        {
+            if (sourceDataFile == null)
+                return;
+            
+            string text = sourceDataFile.text;
+
+            if (string.IsNullOrWhiteSpace(text))
+                return;
+            
+            string firstLine = text.Split('\n').FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(firstLine))
+                return;
+            
+            string[] headers = firstLine.Split(',');
+
+            columns = headers
+                .Select(h => new ColumnDefinition(h.Trim()))
+                .ToList();
+        }        
     }
 }
